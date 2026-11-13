@@ -12,6 +12,7 @@ in a ledger.
 | # | Question (EN) | Field | Default / recommendation |
 |---|---|---|---|
 | 1 | What is the bot's name? | `name` | kebab-case, unique |
+| 1b | Which emoji represents it? | `icon` | suggest one that fits the role (exactly one emoji) |
 | 2 | What is its role/personality? | `persona.role` | — |
 | 3 | What is its tone of voice? | `persona.tone` | "direct, clear" |
 | 4 | What must it never do? | `persona.constraints` | — |

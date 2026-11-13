@@ -1,4 +1,5 @@
 name: support-assistant
+icon: "💬"
 version: "0.1"
 description: "Support assistant that answers questions in a friendly way"
 persona:

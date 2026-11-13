@@ -16,6 +16,12 @@ const KNOWN_HARNESS_TOOLS = new Set([
   'web_fetch', 'subagent', 'workflow', 'list', 'ask_user_question',
 ]);
 
+function iconError(icon) {
+  if (icon === undefined) return null;
+  if (typeof icon !== 'string') return 'must be a string (one emoji)';
+  const n = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(icon)].length;
+  return n === 1 && !/s/.test(icon) ? null : `"${icon}" must be exactly one emoji/character`;
+}
 function validate(doc) {
   const errors = [];
   const warnings = [];
@@ -32,6 +38,9 @@ function validate(doc) {
   if (typeof doc.version !== 'string' || doc.version.length === 0) {
     errors.push({ field: 'version', reason: 'required string' });
   }
+  // icon (optional, one emoji)
+  const iconErr = iconError(doc.icon);
+  if (iconErr) errors.push({ field: 'icon', reason: iconErr });
   // persona
   if (typeof doc.persona !== 'object' || doc.persona === null) {
     errors.push({ field: 'persona', reason: 'required object' });
@@ -117,4 +126,4 @@ if (errors.length > 0) {
   for (const e of errors) console.error(`  ${e.field}: ${e.reason}`);
   process.exit(1);
 }
-console.log(`✅ ${abs}: valid (name=${doc.name}, tasks=${Array.isArray(doc.tasks) ? doc.tasks.length : 0})`);
+console.log(`✅ ${abs}: valid (${doc.icon ?? '🤖'} name=${doc.name}, tasks=${Array.isArray(doc.tasks) ? doc.tasks.length : 0})`);

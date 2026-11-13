@@ -25,7 +25,7 @@ for (let i = 0; i < steps.length; i++) {
   const task = bot.tasks.find((t) => t.id === s.task) ?? bot.tasks[0];
   if (!task) { console.error(`  ❌ step ${i + 1}: bot "${s.bot}" has no task`); process.exit(1); }
   const ins = Object.entries(s.inputs ?? task.inputs ?? {}).map(([k, v]) => `${k}=${v}`);
-  console.log(`${i + 1}. ${bot.name}/${task.id}${task.output ? ' → ' + task.output : ''}`);
+  console.log(`${i + 1}. ${bot.icon ?? '🤖'} ${bot.name}/${task.id}${task.output ? ' → ' + task.output : ''}`);
   console.log(`   run: node tools/run-openbot.mjs ${bot.name} --task ${task.id}${ins.length ? ' --input ' + ins.join(' --input ') : ''}`);
 }
 if (isCompose) {

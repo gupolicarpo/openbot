@@ -32,6 +32,14 @@ function loadBot(arg) {
   return yaml.load(readFileSync(resolveBot(arg), 'utf8'));
 }
 
+function iconError(icon) {
+  if (icon === undefined) return null;
+  if (typeof icon !== 'string') return 'must be a string (one emoji)';
+  const n = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(icon)].length;
+  return n === 1 && !/s/.test(icon) ? null : `"${icon}" must be exactly one emoji/character`;
+}
+const ico = (d) => d?.icon ?? '🤖';
+
 function validate(doc) {
   const errors = [];
   const warnings = [];
@@ -41,6 +49,8 @@ function validate(doc) {
   if (typeof doc.name !== 'string' || !doc.name) errors.push({ field: 'name', reason: 'required string' });
   else if (!NAME_RE.test(doc.name)) errors.push({ field: 'name', reason: `"${doc.name}" is not kebab-case` });
   if (typeof doc.version !== 'string' || !doc.version) errors.push({ field: 'version', reason: 'required string' });
+  const iconErr = iconError(doc.icon);
+  if (iconErr) errors.push({ field: 'icon', reason: iconErr });
   if (typeof doc.persona !== 'object' || doc.persona === null) errors.push({ field: 'persona', reason: 'required object' });
   else if (typeof doc.persona.role !== 'string' || !doc.persona.role) errors.push({ field: 'persona.role', reason: 'required non-empty string' });
   if (!Array.isArray(doc.instructions) || doc.instructions.length === 0) errors.push({ field: 'instructions', reason: 'required non-empty list' });
@@ -69,15 +79,15 @@ function listBots() {
   const rows = files.map((f) => {
     try {
       const d = yaml.load(readFileSync(join(BOTS, f), 'utf8'));
-      return `- ${d.name} (v${d.version}) — ${d.description ?? ''} [${(d.tasks ?? []).map((t) => t.kind).join(', ')}]`;
-    } catch (e) { return `- (invalid: ${f}) parse error`; }
+      return `- ${ico(d)} ${d.name} (v${d.version}) — ${d.description ?? ''} [${(d.tasks ?? []).map((t) => t.kind).join(', ')}]`;
+    } catch (e) { return `- ⚠️ (invalid: ${f}) parse error`; }
   });
   return `Bots in ${BOTS}:\n${rows.join('\n')}`;
 }
 
 function buildInstruction(doc, task, inputs) {
   const ins = Object.entries(inputs ?? {}).map(([k, v]) => `${k}=${v}`).join(', ') || '(none)';
-  const instruction = `Use the openbot skill to run the bot "${doc.name}" (manifest bots/${doc.name}.yaml), task "${task.id}", inputs: ${ins}. Execute it in the current directory and report the result.`;
+  const instruction = `Use the openbot skill to run the bot ${ico(doc)} "${doc.name}" (manifest bots/${doc.name}.yaml), task "${task.id}", inputs: ${ins}. Execute it in the current directory and report the result.`;
   const via = (process.env.OPENBOT_VIA ?? 'dsh');
   const q = (s) => `"${String(s).replace(/"/g, '\\"')}"`;
   const cmd = { dsh: `dsh headless ${q(instruction)}`, claude: `claude -p ${q(instruction)}`, codex: `codex exec ${q(instruction)}` }[via];
@@ -109,7 +119,7 @@ function orchestratePlan(pipePath) {
   steps.forEach((s, i) => {
     const d = loadBot(s.bot);
     const t = d.tasks.find((x) => x.id === s.task) ?? d.tasks[0];
-    lines.push(`${i + 1}. ${d.name}/${t.id}${t.output ? ' → ' + t.output : ''}`);
+    lines.push(`${i + 1}. ${ico(d)} ${d.name}/${t.id}${t.output ? ' → ' + t.output : ''}`);
   });
   return lines.join('\n');
 }
@@ -129,7 +139,7 @@ function pack(bot, out) {
       refs.push(v);
     }
   }
-  writeFileSync(join(packDir, 'README.md'), `# ${d.name} (v${d.version})\n\n${d.description ?? ''}\n`);
+  writeFileSync(join(packDir, 'README.md'), `# ${ico(d)} ${d.name} (v${d.version})\n\n${d.description ?? ''}\n`);
   return `packed ${d.name} → ${packDir}`;
 }
 
@@ -148,8 +158,8 @@ function callTool(name, args) {
     case 'openbot_validate': {
       const d = loadBot(args.bot);
       const { errors } = validate(d);
-      if (errors.length) return `❌ ${args.bot}: ${errors.length} error(s)\n` + errors.map((e) => `  ${e.field}: ${e.reason}`).join('\n');
-      return `✅ ${args.bot}: valid (name=${d.name}, tasks=${(d.tasks ?? []).length})`;
+      if (errors.length) return `❌ ${ico(d)} ${args.bot}: ${errors.length} error(s)\n` + errors.map((e) => `  ${e.field}: ${e.reason}`).join('\n');
+      return `✅ ${ico(d)} ${args.bot}: valid (name=${d.name}, tasks=${(d.tasks ?? []).length})`;
     }
     case 'openbot_run': {
       const d = loadBot(args.bot);

@@ -1,4 +1,5 @@
 name: code-reviewer
+icon: "🔍"
 version: "0.3"
 description: "Reviews code/diffs with a focus on bugs, security and readability"
 persona:

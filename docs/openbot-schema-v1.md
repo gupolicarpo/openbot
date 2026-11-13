@@ -11,6 +11,7 @@ file (JSON is also accepted) and executed by a runner inside an AI harness
 | `name` | string | yes | Bot name, kebab-case (`[a-z0-9]+(-[a-z0-9]+)*`), unique across bots. |
 | `version` | string | yes | Manifest version (e.g. `"0.1"`). |
 | `description` | string | no | One line, shown in lists/selection. |
+| `icon` | string | no | Exactly one emoji that identifies the bot in lists, MCP results and the conversation (every reply as the bot starts with it). Default `🤖`. |
 | `persona` | object | yes | The bot's personality / role. |
 | `persona.role` | string | yes | Role the bot assumes (becomes the system prompt). |
 | `persona.tone` | string | no | Tone of voice. |
@@ -77,6 +78,7 @@ as **native harness subagents** and aggregates the results. Example:
 name: code-reviewer
 version: "0.1"
 description: "Reviews code with a focus on bugs and security"
+icon: "🔍"
 persona:
   role: "Senior code reviewer"
   tone: "direct, constructive"

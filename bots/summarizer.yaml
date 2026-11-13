@@ -1,4 +1,5 @@
 name: summarizer
+icon: "📝"
 version: "0.1"
 description: "Summarizes texts preserving the facts"
 persona:

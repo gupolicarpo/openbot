@@ -9,6 +9,7 @@ Compact reference for the runner. A manifest is a YAML (or JSON) object.
 | `name` | string (kebab-case) | yes |
 | `version` | string | yes |
 | `description` | string | no |
+| `icon` | string (exactly one emoji) | no — default 🤖 |
 | `persona.role` | string | yes |
 | `persona.tone` | string | no |
 | `persona.constraints` | list<string> | no |

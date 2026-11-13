@@ -1,4 +1,5 @@
 name: echo-api
+icon: "📡"
 version: "0.1"
 description: "Echoes input via an HTTP endpoint"
 persona:

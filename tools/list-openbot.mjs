@@ -19,13 +19,13 @@ for (const f of entries.sort()) {
   try {
     const doc = yaml.load(readFileSync(join(botsDir, f), 'utf8'));
     const kinds = Array.isArray(doc.tasks) ? doc.tasks.map((t) => t.kind).join(', ') : '-';
-    rows.push({ name: doc.name ?? '?', version: doc.version ?? '?', desc: doc.description ?? '', kinds });
+    rows.push({ icon: doc.icon ?? '🤖', name: doc.name ?? '?', version: doc.version ?? '?', desc: doc.description ?? '', kinds });
   } catch (e) {
-    rows.push({ name: `(invalid: ${f})`, version: '-', desc: `parse error: ${e.message}`, kinds: '-' });
+    rows.push({ icon: '⚠️', name: `(invalid: ${f})`, version: '-', desc: `parse error: ${e.message}`, kinds: '-' });
   }
 }
 
 console.log(`Bots in ${botsDir}:`);
 for (const r of rows) {
-  console.log(`- ${r.name} (v${r.version})${r.desc ? ' — ' + r.desc : ''} [${r.kinds}]`);
+  console.log(`- ${r.icon} ${r.name} (v${r.version})${r.desc ? ' — ' + r.desc : ''} [${r.kinds}]`);
 }

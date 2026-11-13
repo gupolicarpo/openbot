@@ -1,4 +1,5 @@
 name: daily-digest
+icon: "📰"
 version: "0.1"
 description: "Generates a daily summary of executed bots"
 persona:

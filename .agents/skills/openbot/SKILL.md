@@ -43,6 +43,15 @@ run, executing its task with this harness's own agent loop, model, and tools.
    `persona.constraints`) as your role and voice; follow `instructions`; use
    only the tools in `tools.harness`/`tools.mcp`. If `tools` is omitted, use
    only read-only tools.
+   **Show who is speaking:** take the bot's `icon` (one emoji; `🤖` if absent)
+   and start every message you write as the bot with `<icon> **<name>:**`
+   (e.g. `🔍 **code-reviewer:** …`). When you speak as the runner again
+   (validation errors, the final report), drop the prefix. In a pipeline,
+   each step uses its own bot's icon, so the user can tell the bots apart.
+   The prefix goes once at the start of each block of bot speech (not on every
+   paragraph); after a tool call or a runner line, the next bot block gets it
+   again. It is for the conversation only: never write it into `task.output`
+   files or `runs.jsonl`.
 4. **Execute the tasks.** Run each `kind: task` in `tasks` in order: do
    `task.prompt` using `task.inputs`, write the result to `task.output` when
    present.
@@ -54,7 +63,8 @@ run, executing its task with this harness's own agent loop, model, and tools.
 
 1. **Locate + validate** the manifest (a chat bot has at least one
    `kind: chat` task; its `prompt` is the bot's standing behavior).
-2. **Become the bot**: same as run (persona + instructions + tools).
+2. **Become the bot**: same as run (persona + instructions + tools), including
+   the `<icon> **<name>:**` prefix on every reply as the bot.
 3. **Converse**: hold a multi-turn conversation in the user's language. Greet
    as the persona, stay in role, honor `persona.constraints`, and keep the
    session in memory (no cross-session persistence in MVP).
@@ -64,7 +74,7 @@ run, executing its task with this harness's own agent loop, model, and tools.
 
 ## Mode: list
 
-List every `bots/*.yaml` with name, version, description, and task kinds.
+List every `bots/*.yaml` with icon, name, version, description, and task kinds.
 Prefer `node tools/list-openbot.mjs`; otherwise read the manifests directly.
 
 ## Mode: author/edit
