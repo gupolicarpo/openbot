@@ -1,35 +1,35 @@
 # OpenBot
 
-Uma camada leve para criar, editar, listar e rodar **bots** — com personalidade,
-instruções, ferramentas e tarefas — **dentro de harnesses de IA existentes**
-(DeepSeek Harness, Claude Code e Codex). Cada bot é um manifesto portátil
-`openbot.yaml`; uma runner-skill `openbot` o executa no loop nativo do harness,
-sem reimplementar agente.
+A lightweight layer to create, edit, list and run **bots** — with personality,
+instructions, tools and tasks — **inside existing AI harnesses** (DeepSeek
+Harness, Claude Code and Codex). Each bot is a portable `openbot.yaml` manifest;
+an `openbot` runner skill executes it in the harness's native loop, without
+reimplementing an agent.
 
-## Funcionalidades
-- **Modos**: task (1 execução), chat (multi-turno), scheduled, api, compose (multi-bot), list.
-- **Persona + instruções + ferramentas + memória** por bot (manifesto declarativo).
+## Features
+- **Modes**: task (one-shot), chat (multi-turn), scheduled, api, compose (multi-bot), list.
+- **Persona + instructions + tools + memory** per bot (declarative manifest).
 - **Capability presets** (`explore` / `plan` / `general`).
-- **Portável**: skill (Agent Skills) + instalador + MCP server para DSH, Claude Code e Codex.
-- **Tooling**: validador, listagem, hook programático (delega ao harness), memória, orquestração, pack, CI.
+- **Portable**: Agent Skills skill + installer + MCP server for DSH, Claude Code and Codex.
+- **Tooling**: validator, listing, programmatic hook (delegates to the harness), memory, orchestration, pack, CI.
 
-## Começo rápido
+## Quick start
 ```bash
-node tools/validate-all.mjs bots        # valida os bots
-node tools/list-openbot.mjs             # lista os bots
-node tools/install-openbot.mjs claude codex   # instala a skill nos outros harnesses
-node tools/mcp-openbot.mjs              # MCP server (tools nativas)
+node tools/validate-all.mjs bots        # validate the bots
+node tools/list-openbot.mjs             # list the bots
+node tools/install-openbot.mjs claude codex   # install the skill into other harnesses
+node tools/mcp-openbot.mjs              # MCP server (native tools)
 ```
 
 ## Layout
-- `bots/*.yaml` — manifestos dos bots.
+- `bots/*.yaml` — bot manifests.
 - `tools/` — scripts (validate, list, run, memory, orchestrate, schedule, serve, pack, install, mcp).
-- `.agents/skills/openbot/` — a skill (runner + author/edit).
-- `docs/` — documentação completa.
+- `.agents/skills/openbot/` — the skill (runner + author/edit).
+- `docs/` — full documentation.
 
-## Documentação
+## Documentation
 [README](docs/openbot-readme.md) · [schema](docs/openbot-schema-v1.md) ·
 [adapter spec](docs/openbot-adapter-spec-v1.md) · [MCP](docs/openbot-mcp.md) ·
-[instalação por harness](docs/openbot-harness-install.md) ·
-[arquitetura](docs/openbot-architecture.md) · [backlog](docs/openbot-backlog.md) ·
+[harness install](docs/openbot-harness-install.md) ·
+[architecture](docs/openbot-architecture.md) · [backlog](docs/openbot-backlog.md) ·
 [smoke test](docs/smoke-test.md)
