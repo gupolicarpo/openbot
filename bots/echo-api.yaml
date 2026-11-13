@@ -1,0 +1,18 @@
+name: echo-api
+version: "0.1"
+description: "Ecoa a entrada via endpoint HTTP"
+persona:
+  role: "Serviço de eco"
+  tone: "neutro"
+  constraints:
+    - "Apenas ecoar a entrada recebida"
+instructions:
+  - "Devolver a entrada como veio"
+tasks:
+  - id: echo
+    kind: api
+    route: "/echo"
+    prompt: "Ecoar a mensagem recebida"
+execution:
+  mode: api
+  memory: none

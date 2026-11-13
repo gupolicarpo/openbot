@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.runs.jsonl
+*.memory.jsonl
+sample/review-report.md
+sample/change-review-report.md
+sample/summary.md
+sample/daily-digest.md
+.agents/skills/prototype-anything/

@@ -1,0 +1,11 @@
+name: review-then-summarize
+description: "Revisa um diff e depois resume um texto, em sequência"
+steps:
+  - bot: code-reviewer
+    task: review-diff
+    inputs:
+      code_path: ./sample/change.patch
+  - bot: summarizer
+    task: summarize
+    inputs:
+      source_path: ./sample/article.txt

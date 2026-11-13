@@ -1,0 +1,10 @@
+{
+  "name": "prototype-anything-openbot",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenBot as a DSH (Cordis) runtime-skill plugin — registers the openbot skill at runtime.",
+  "main": "src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "keywords": ["dsh", "cordis", "openbot", "agent", "skills"],
+  "license": "MIT"
+}

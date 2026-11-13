@@ -1,0 +1,12 @@
+# invalid-bot.yaml — manifesto com defeitos intencionais para demonstrar o validador.
+name: "Not Kebab Case!"
+persona:
+  role: ""
+instructions: []
+tasks:
+  - id: a
+    kind: foo
+    prompt: "x"
+  - id: a
+    kind: task
+    prompt: ""

@@ -1,0 +1,23 @@
+name: daily-digest
+version: "0.1"
+description: "Gera um resumo diário dos bots executados"
+persona:
+  role: "Editor de resumos diários"
+  tone: "conciso, informativo"
+  constraints:
+    - "Resumir apenas os runs registrados; não inventar execuções"
+instructions:
+  - "Ler bots/*.runs.jsonl e resumir as execuções do dia"
+tools:
+  harness:
+    - read
+    - glob
+tasks:
+  - id: digest
+    kind: scheduled
+    schedule: "0 9 * * *"
+    prompt: "Resumir os runs do dia em Markdown"
+    output: "sample/daily-digest.md"
+execution:
+  mode: scheduled
+  memory: none

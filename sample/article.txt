@@ -1,0 +1,7 @@
+# Título: Como escrever bons prompts
+
+Um bom prompt é específico, dá contexto e define o formato esperado da
+resposta. Especificidade reduz ambiguidade; contexto ajuda o modelo a
+interpretar o pedido; e o formato esperado torna o resultado verificável.
+Esses três elementos, juntos, aumentam a qualidade e a previsibilidade das
+respostas de um modelo de linguagem.
