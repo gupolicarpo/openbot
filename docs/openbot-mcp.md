@@ -6,6 +6,33 @@ tools, usable by any agent with an MCP client — DSH, Claude Code, Codex/ChatGP
 ## Tools
 - `openbot_list` · `openbot_validate` · `openbot_run` · `openbot_memory` ·
   `openbot_orchestrate` · `openbot_pack`
+- `openbot_get` — a bot's icon, how to act as it, and its full manifest.
+- `openbot_save` — validate + write `bots/<name>.yaml`; refuses unless `approved: true`
+  (set only after the user approved the summary) and refuses to overwrite unless
+  `overwrite: true`. This is what lets clients **without file access** (the Claude app's
+  Chat mode) create and edit bots.
+
+## Prompts (slash commands)
+- `new-bot` (optional `idea`) — guided interview to create a bot; in Claude Code: `/mcp__openbot__new-bot`.
+- `edit-bot` (`bot`) — guided edit of an existing bot: `/mcp__openbot__edit-bot`.
+- `chat-with-bot` (`bot`) — Claude takes on the bot's persona for the conversation:
+  `/mcp__openbot__chat-with-bot`.
+
+The prompts are self-contained (they don't need the skill). `new-bot`/`edit-bot` only *start*
+the interview: nothing is written until the user approves the summary. After creating a bot,
+`new-bot` opens a dedicated session with it in the Claude Code desktop app, or tells the user
+to start a new chat with `chat-with-bot` elsewhere.
+
+### Claude app (Chat mode)
+Chat mode reads neither `.mcp.json` nor `~/.claude/skills`:
+1. Add the server to `claude_desktop_config.json` (Windows: `%APPDATA%\Claude\`), then
+   restart the app:
+   ```json
+   { "mcpServers": { "openbot": { "command": "node", "args": ["<absolute-path-to-repo>/tools/mcp-openbot.mjs"] } } }
+   ```
+   The prompts appear in the chat's "+" menu under `openbot`.
+2. Optional — the skill: `node tools/zip-skill-openbot.mjs` builds `dist/openbot-skill.zip`;
+   upload it in Settings → Capabilities → Skills.
 
 ## Connect
 

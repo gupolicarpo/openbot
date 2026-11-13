@@ -25,6 +25,13 @@ Choose the mode from the user's ask:
 - "lista os bots" → **list**.
 - "create/make/edit/define a bot" → **author/edit**.
 
+**No file access?** (e.g. the Claude app's Chat mode.) Use the `openbot` MCP
+server instead of reading/writing files: `openbot_list` to list,
+`openbot_get` to load a bot (it returns how to act as it), `openbot_validate`
+to check, and `openbot_save` (with `approved: true`, only after the user
+approved the summary) to create or update a bot. If that server is not
+connected either, say so and stop: do not invent a bot.
+
 ---
 
 ## Mode: run (task)
@@ -79,9 +86,22 @@ Prefer `node tools/list-openbot.mjs`; otherwise read the manifests directly.
 
 ## Mode: author/edit
 
-Follow [references/authoring.md](references/authoring.md): interview in the
-user's language, map answers to manifest fields, write `bots/<name>.yaml`,
-validate, and report.
+**Hard rule — interview first, write last.** Never create or change a
+`bots/*.yaml` file in the same turn as the request. Even when the request
+already describes the bot in detail, you MUST first run the interview and get
+the user's explicit approval of the summary. Use what the request already says
+to *pre-fill recommended answers* — the user then confirms or changes them —
+but never skip asking. When the harness has a structured question tool
+(Claude Code: `AskUserQuestion`), use it for each batch; otherwise ask in
+plain text and stop your turn to wait for the answer. Writing the file before
+step 5 (summary approved) is a failure of this mode.
+
+Then follow [references/authoring.md](references/authoring.md): interview in
+the user's language in batches, show the summary, and only after the user
+approves it write `bots/<name>.yaml`, validate, and report. Finally open a
+dedicated chat session with the new bot (step 7 of the create flow: in the
+Claude Code desktop app start it with the `start_session` tool, titled
+`<icon> <name>`; elsewhere give the command to open it).
 
 ## Scheduled & api (declared)
 

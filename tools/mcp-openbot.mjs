@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // mcp-openbot.mjs — OpenBot as a dependency-free MCP server (stdio, JSON-RPC).
+// Prompts: new-bot, edit-bot, chat-with-bot.
 // Exposes: openbot_list, openbot_validate, openbot_run, openbot_memory,
-//          openbot_orchestrate, openbot_pack.
+//          openbot_orchestrate, openbot_pack, openbot_get, openbot_save.
 // Connect with any MCP client (DSH / Claude Code / Codex):
 //   command: node tools/mcp-openbot.mjs
 // Protocol version: 2024-11-05 (content[] / isError).
@@ -143,12 +144,108 @@ function pack(bot, out) {
   return `packed ${d.name} → ${packDir}`;
 }
 
+// MCP prompts: in Claude Code they show up as /mcp__openbot__<name>; in the
+// Claude app's Chat mode, in the "+" menu of the openbot server. They are
+// self-contained (no skill needed) and only use this server's tools.
+const PROMPTS = [
+  { name: 'new-bot', description: 'Create a new OpenBot bot through a guided interview (no YAML).', arguments: [{ name: 'idea', description: 'One line about what the bot should do (optional)', required: false }] },
+  { name: 'edit-bot', description: 'Edit an existing OpenBot bot through a short interview.', arguments: [{ name: 'bot', description: 'Bot name (as in bots/<name>.yaml)', required: true }] },
+  { name: 'chat-with-bot', description: 'Talk to an OpenBot bot: Claude takes on its persona for this conversation.', arguments: [{ name: 'bot', description: 'Bot name (as in bots/<name>.yaml)', required: true }] },
+];
+const FENCE = String.fromCharCode(96).repeat(3);
+const INTERVIEW_RULES = [
+  'Interview me in my language, in batches of 2-5 questions. For each question propose a recommended answer (pre-filled from what I already said) that I can confirm or change.',
+  'Use a structured question tool if this harness has one (Claude Code: AskUserQuestion); otherwise ask in plain text and STOP your turn to wait for my answers.',
+  'Do NOT create or modify any bot until I have explicitly approved the final summary.',
+];
+const MANIFEST_SPEC = [
+  'Manifest fields (YAML): name (kebab-case, unique), icon (exactly one emoji), version ("0.1" for new bots), description (one line),',
+  'persona: { role (required), tone, constraints: [what it must never do] }, instructions: [standing rules, >=1],',
+  'tools: { harness: [...] } (omit = read-only), tasks: [{ id, kind: task|chat|scheduled|api, prompt, inputs: {...}, output: <file> }]',
+  '(scheduled needs schedule: "<cron>", api needs route: "/path"). A bot you talk to needs a kind: chat task whose prompt is its standing behavior.',
+];
+const OPEN_SESSION = [
+  "Then open the bot's own conversation:",
+  '- If you can start a separate session (Claude Code desktop: the start_session tool; load it with ToolSearch if deferred), start one now (initiation "user_asked", context "fresh", use_worktree false, title "<icon> <name>", name "<name>") with the prompt: Use the openbot skill in chat mode, or the openbot_get tool: you are the bot "<name>". Greet me in role and wait for my first message. Then link it to me.',
+  "- Otherwise (e.g. the Claude app's Chat mode): tell me to open a new chat and pick the openbot prompt \"chat-with-bot\" with bot = <name>.",
+];
+function chatPrompt(d) {
+  const icon = d.icon ?? '🤖';
+  const chatTask = (d.tasks ?? []).find((t) => t.kind === 'chat') ?? (d.tasks ?? [])[0];
+  return [
+    'For the rest of this conversation you ARE the OpenBot bot ' + icon + ' "' + d.name + '" (v' + d.version + ').',
+    'Role: ' + d.persona?.role,
+    d.persona?.tone ? 'Tone: ' + d.persona.tone : '',
+    ...(d.persona?.constraints ?? []).map((c) => 'Constraint: ' + c),
+    'Instructions:', ...(d.instructions ?? []).map((i) => '- ' + i),
+    chatTask ? 'Standing behavior (task "' + chatTask.id + '"): ' + chatTask.prompt : '',
+    'Start every message you write as the bot with "' + icon + ' **' + d.name + ':**". Speak my language. Stay in role until I say "sair do bot".',
+    'Greet me now in role, in one or two lines, and wait for my first message.',
+  ].filter(Boolean).join('\n');
+}
+function getPrompt(name, args = {}) {
+  const msg = (description, text) => ({ description, messages: [{ role: 'user', content: { type: 'text', text } }] });
+  if (name === 'new-bot') {
+    const idea = args.idea ? 'My idea: "' + args.idea + '".' : 'Start by asking me what the bot should do.';
+    return msg('Guided creation of a new bot', [
+      'I want to create a new OpenBot bot. ' + idea,
+      'Run this interview, in order:',
+      '0. Restate my idea in one line and say you will ask a few questions before creating anything.',
+      '1. Name (check it is free with openbot_list), role/persona, and one emoji icon.',
+      '2. Tone, constraints (what it must never do) and standing instructions.',
+      '3. Tools (default: read-only).',
+      '4. Main task(s): prompt, inputs, output file, kind. Include a kind: chat task so I can talk to it.',
+      '5. Show a compact summary (not raw YAML) and ask "Posso criar?".',
+      ...INTERVIEW_RULES,
+      ...MANIFEST_SPEC,
+      'After my explicit yes: call openbot_save with the full YAML manifest and approved: true. If it reports errors, fix them and save again. Report the path.',
+      ...OPEN_SESSION,
+    ].join('\n'));
+  }
+  if (name !== 'edit-bot' && name !== 'chat-with-bot') throw new Error('unknown prompt "' + name + '"');
+  if (!args.bot) throw new Error('argument "bot" is required');
+  const d = loadBot(args.bot);
+  if (name === 'edit-bot') {
+    return msg('Guided edit of ' + d.name, [
+      'I want to edit the OpenBot bot ' + (d.icon ?? '🤖') + ' "' + d.name + '" (v' + d.version + '). Its current manifest:',
+      FENCE + 'yaml', readFileSync(resolveBot(args.bot), 'utf8').trim(), FENCE,
+      'Summarize it to me in 1-2 lines, then ask ONLY what I want to change.',
+      ...INTERVIEW_RULES,
+      'After my explicit yes: apply just that delta, keep everything else, bump version, and call openbot_save with the full YAML, approved: true and overwrite: true. Report the result.',
+    ].join('\n'));
+  }
+  return msg('Chat with ' + d.name, chatPrompt(d));
+}
+
+function getBot(bot) {
+  const d = loadBot(bot);
+  return [
+    (d.icon ?? '🤖') + ' ' + d.name + ' (v' + d.version + ') — ' + (d.description ?? ''),
+    '', '## How to act as this bot', chatPrompt(d),
+    '', '## Manifest (' + resolveBot(bot) + ')', readFileSync(resolveBot(bot), 'utf8').trim(),
+  ].join('\n');
+}
+
+function saveBot({ manifest, approved, overwrite }) {
+  if (approved !== true) throw new Error('refused: set approved=true only after the user explicitly approved the summary of this bot');
+  if (typeof manifest !== 'string' || !manifest.trim()) throw new Error('manifest (YAML text) is required');
+  const d = yaml.load(manifest);
+  const { errors } = validate(d);
+  if (errors.length) return '❌ not saved — ' + errors.length + ' error(s):\n' + errors.map((e) => '  ' + e.field + ': ' + e.reason).join('\n');
+  const path = join(BOTS, d.name + '.yaml');
+  if (existsSync(path) && overwrite !== true) throw new Error('bots/' + d.name + '.yaml already exists; pick another name, or pass overwrite=true when editing it');
+  writeFileSync(path, manifest.replace(/^﻿/, '').trimEnd() + '\n', 'utf8');
+  return '✅ saved ' + (d.icon ?? '🤖') + ' ' + d.name + ' (v' + d.version + ') → ' + path;
+}
+
 const TOOLS = [
   { name: 'openbot_list', description: 'List all bots in bots/ with name, version, description and task kinds.', inputSchema: { type: 'object', properties: {} } },
   { name: 'openbot_validate', description: 'Validate a bot manifest against schema v1.1 (field + reason errors).', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name or manifest path' } }, required: ['bot'] } },
   { name: 'openbot_run', description: 'Build the delegation instruction + command to run a bot via a harness CLI (dsh/claude/codex).', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, task: { type: 'string' }, inputs: { type: 'object' } }, required: ['bot'] } },
   { name: 'openbot_memory', description: 'Persistent memory: add / search / show entries for a bot.', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, op: { type: 'string', enum: ['add', 'search', 'show'] }, text: { type: 'string' } }, required: ['bot', 'op'] } },
   { name: 'openbot_orchestrate', description: 'Print the ordered multi-bot plan for a pipeline.yaml.', inputSchema: { type: 'object', properties: { pipeline: { type: 'string' } }, required: ['pipeline'] } },
+  { name: 'openbot_get', description: 'Get a bot: its icon, how to act as it (persona, instructions, chat behavior) and its full manifest. Use it to talk as the bot or before editing it.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name or manifest path' } }, required: ['bot'] } },
+  { name: 'openbot_save', description: 'Validate and write a bot manifest to bots/<name>.yaml. Only call after the user explicitly approved the bot summary (approved=true). Refuses to overwrite unless overwrite=true.', inputSchema: { type: 'object', properties: { manifest: { type: 'string', description: 'Full YAML manifest' }, approved: { type: 'boolean', description: 'true only if the user explicitly approved this bot' }, overwrite: { type: 'boolean', description: 'true to replace an existing bot (edit flow)' } }, required: ['manifest', 'approved'] } },
   { name: 'openbot_pack', description: 'Bundle a bot (manifest + referenced inputs + README) into a shareable folder.', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, out: { type: 'string' } }, required: ['bot'] } },
 ];
 
@@ -168,6 +265,8 @@ function callTool(name, args) {
     }
     case 'openbot_memory': return memory(args.bot, args.op, args.text);
     case 'openbot_orchestrate': return orchestratePlan(args.pipeline);
+    case 'openbot_get': return getBot(args.bot);
+    case 'openbot_save': return saveBot(args);
     case 'openbot_pack': return pack(args.bot, args.out);
     default: throw new Error(`unknown tool "${name}"`);
   }
@@ -183,7 +282,15 @@ rl.on('line', (line) => {
     return;
   }
   if (msg.method === 'initialize') {
-    send({ jsonrpc: '2.0', id: msg.id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'openbot-mcp', version: '0.1.0' } } });
+    send({ jsonrpc: '2.0', id: msg.id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {}, prompts: {} }, serverInfo: { name: 'openbot-mcp', version: '0.1.0' } } });
+  } else if (msg.method === 'prompts/list') {
+    send({ jsonrpc: '2.0', id: msg.id, result: { prompts: PROMPTS } });
+  } else if (msg.method === 'prompts/get') {
+    try {
+      send({ jsonrpc: '2.0', id: msg.id, result: getPrompt(msg.params?.name, msg.params?.arguments ?? {}) });
+    } catch (e) {
+      send({ jsonrpc: '2.0', id: msg.id, error: { code: -32602, message: e.message } });
+    }
   } else if (msg.method === 'tools/list') {
     send({ jsonrpc: '2.0', id: msg.id, result: { tools: TOOLS } });
   } else if (msg.method === 'tools/call') {
