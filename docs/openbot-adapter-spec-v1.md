@@ -1,52 +1,54 @@
 # OpenBot — Adapter Spec v1
 
-Define a interface que um runner de harness precisa implementar para suportar o
-OpenBot. Objetivo: o **mesmo manifesto** roda em qualquer harness conforme.
+Defines the interface a harness runner must implement to support OpenBot. Goal:
+the **same manifest** runs on any conforming harness.
 
-## Princípios
-- O adaptador **reusa** o loop de agente, o modelo e as ferramentas do harness.
-  Ele não implementa agente nenhum.
-- O manifesto é a única fonte de verdade; o adaptador nunca o altera.
-- Um bot em modo `task` recebe entradas e devolve um artefato de saída.
+## Principles
+- The adapter **reuses** the harness's agent loop, model and tools. It does not
+  implement an agent.
+- The manifest is the single source of truth; the adapter never changes it.
+- A `task` bot receives inputs and returns an output artifact.
 
-## Interface (contrato)
+## Interface (contract)
 
-| Operação | Assinatura lógica | Responsabilidade |
+| Operation | Logical signature | Responsibility |
 |---|---|---|
-| `load` | `load(path) -> Bot \| {errors[]}` | ler + parsear + validar contra o schema v1 |
-| `resolveTools` | `resolveTools(tools, harness) -> allowed` | mapear `tools.harness` para ferramentas nativas e anexar `tools.mcp` |
-| `run` | `run(bot, task, ctx) -> RunResult` | adotar persona/instruções, executar a tarefa, devolver resultado |
-| `record` | `record(bot, run)` | anexar uma linha JSONL a `bots/<name>.runs.jsonl` |
-| `report` | `report(run) -> summary` | resumir resultado e status ao usuário |
+| `load` | `load(path) -> Bot \| {errors[]}` | read + parse + validate against schema v1 |
+| `resolveTools` | `resolveTools(tools, harness) -> allowed` | map `tools.harness` to native tools and attach `tools.mcp` |
+| `run` | `run(bot, task, ctx) -> RunResult` | adopt persona/instructions, execute the task, return the result |
+| `record` | `record(bot, run)` | append one JSONL line to `bots/<name>.runs.jsonl` |
+| `report` | `report(run) -> summary` | summarize result and status to the user |
 
 `RunResult` = `{bot, task, status: completed|failed, result, startedAt, finishedAt}`.
 
-## Validação
-Todo adaptador deve rejeitar manifestos inválidos com **campo + motivo**
-(regras em `references/schema.md`). Validador de referência:
+## Validation
+Every adapter must reject invalid manifests with **field + reason** (rules in
+`references/schema.md`). Reference validator:
 `node tools/validate-openbot.mjs <manifest>`.
 
-## Adaptador de referência: DSH
-O runner do DSH é a skill `openbot` (modo `run`): o agente do harness
-interpreta o manifesto e executa a tarefa. É a implementação de referência,
-não uma dependência.
+## Reference adapter: DSH
+The DSH runner is the `openbot` skill (run mode): the harness agent interprets
+the manifest and executes the task. It is the reference implementation, not a
+dependency.
 
-## Modos de execução (declarados, não implementados no MVP)
-- `task` — implementado (1 execução → resultado).
-- `chat` — conversa multi-turno persistente (etapa posterior).
-- `scheduled` — execução recorrente/agendada (etapa posterior).
-- `api` — bot exposto como endpoint para outros apps (etapa posterior).
+## Execution modes (declared, not implemented in the MVP)
+- `task` — implemented (1 execution → result).
+- `chat` — persistent multi-turn conversation (later stage).
+- `scheduled` — recurring/scheduled execution (later stage).
+- `api` — bot exposed as an endpoint for other apps (later stage).
 
-O schema aceita esses valores em `tasks[].kind` / `execution.mode`; um runner
-MVP emite aviso e executa o primeiro `kind: task`, ou reporta a limitação.
-## Instalação por harness (concreto)
+The schema accepts these values in `tasks[].kind` / `execution.mode`; an MVP
+runner emits a warning and runs the first `kind: task`, or reports the
+limitation.
 
-A skill é portável (formato Agent Skills). O mesmo `SKILL.md` instala em:
+## Per-harness install (concrete)
 
-| Harness | Diretório | Instalar |
+The skill is portable (Agent Skills format). The same `SKILL.md` installs into:
+
+| Harness | Directory | Install |
 |---|---|---|
 | DSH | `.agents/skills/openbot/` | `node tools/install-openbot.mjs dsh` |
 | Claude Code | `.claude/skills/openbot/` | `node tools/install-openbot.mjs claude` |
 | Codex | `.codex/skills/openbot/` | `node tools/install-openbot.mjs codex` |
 
-Detalhes e comandos manuais: `docs/openbot-harness-install.md`.
+Details and manual commands: `docs/openbot-harness-install.md`.

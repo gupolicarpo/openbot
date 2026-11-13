@@ -1,13 +1,13 @@
-# OpenBot — DSH (Cordis) plugin (esqueleto)
+# OpenBot — DSH (Cordis) plugin (skeleton)
 
-Registra a skill `openbot` no runtime do DSH como skill de runtime (em código,
-em vez de lida do diretório `.agents/skills/`).
+Registers the `openbot` skill in the DSH runtime as a runtime skill (in code,
+instead of being read from the `.agents/skills/` directory).
 
 ## Status
-- **Esqueleto de código**: não compilado nem testado contra o plugin runtime do DSH.
-- Para uso real: compilar com o toolchain do DSH, empacotar (`SKILL.md` +
-  `references/` junto) e carregar como plugin.
+- **Code skeleton**: not compiled or tested against the DSH plugin runtime.
+- For real use: build with the DSH toolchain, bundle (`SKILL.md` +
+  `references/` together) and load as a plugin.
 
-## Estrutura
+## Structure
 - `package.json`
-- `src/index.js` — `apply(ctx)` registra a skill em `ctx.skills`.
+- `src/index.js` — `apply(ctx)` registers the skill in `ctx.skills`.

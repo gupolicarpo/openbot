@@ -1,85 +1,86 @@
-# Plano de Produção — OpenBot
+# Production Plan — OpenBot
 
-> Decompõe o Execution Brief em estágios com "gates" (exit gate) verificáveis.
-> Alimente um estágio por vez a um modelo de execução.
+> Decomposes the Execution Brief into stages with verifiable "exit gates".
+> Feed one stage at a time to an execution model.
 
-## Princípios
-1. **Walking skeleton primeiro:** o Stage 1 é a fatia mínima ponta a ponta.
-2. **Fatias verticais depois:** cada estágio entrega uma capacidade completa e
-   usável, não uma camada horizontal.
-3. **Gate após cada estágio:** nada avança sem o exit gate passar.
-4. **Adiar ≠ descartar:** itens fora do MVP vão para o backlog com nota.
-5. **Demo a cada estágio:** sempre sobra algo executável.
+## Principles
+1. **Walking skeleton first:** Stage 1 is the thinnest end-to-end slice.
+2. **Vertical slices after:** each stage delivers a complete, usable capability,
+   not a horizontal layer.
+3. **A gate after every stage:** nothing advances until the exit gate passes.
+4. **Defer ≠ drop:** items out of the MVP go to the backlog with a note.
+5. **Demo every stage:** something runnable always remains.
 
 ## Stages
 
 ### Stage 0 — Foundations
-- **Objetivo:** schema `openbot.yaml` v1 + exemplos.
-- **Entrega:** especificação do schema (campos, tipos, obrigatoriedade) + 1
-  manifesto exemplo (revisor de código) + regras de validação.
-- **Exit gate:** o schema está documentado e o manifesto exemplo valida contra ele.
+- **Goal:** `openbot.yaml` schema v1 + examples.
+- **Deliverable:** schema spec (fields, types, required) + 1 example manifest
+  (code reviewer) + validation rules.
+- **Exit gate:** the schema is documented and the example manifest validates against it.
 
 ### Stage 1 — Walking skeleton
-- **Objetivo:** runner DSH (skill `openbot`) que roda **um** bot em modo tarefa.
-- **Entrega:** skill `openbot` (SKILL.md + references) que lê um `openbot.yaml`
-  e executa a tarefa do bot no loop nativo do DSH, devolvendo o resultado.
-- **Exit gate:** rodar `openbot` com o manifesto do revisor produz um relatório
-  de revisão ponta a ponta (FR-2, FR-3, FR-7).
+- **Goal:** DSH runner (skill `openbot`) that runs **one** bot in task mode.
+- **Deliverable:** skill `openbot` (SKILL.md + references) that reads an
+  `openbot.yaml` and executes the bot's task in the DSH native loop, returning
+  the result.
+- **Exit gate:** running `openbot` with the reviewer manifest produces a review
+  report end-to-end (FR-2, FR-3, FR-7).
 
-### Stage 2 — Create/edit flow (a "UI simples")
-- **Objetivo:** fluxo guiado (conversacional) que gera e atualiza manifestos.
-- **Entrega:** modo *author/edit* na skill `openbot` que entrevista o usuário e
-  escreve/atualiza o `openbot.yaml` — sem o usuário tocar em YAML.
-- **Exit gate:** um não técnico cria um bot válido pelo fluxo guiado (FR-4,
-  FR-5, NFR-4).
+### Stage 2 — Create/edit flow (the "simple UI")
+- **Goal:** guided (conversational) flow that generates and updates manifests.
+- **Deliverable:** *author/edit* mode in the `openbot` skill that interviews the
+  user and writes/updates `openbot.yaml` — no YAML by hand.
+- **Exit gate:** a non-technical user creates a valid bot via the guided flow
+  (FR-4, FR-5, NFR-4).
 
 ### Stage 3 — Hardening
-- **Objetivo:** validação robusta + erros claros + spec do adaptador + declaração
-  dos demais modos de execução.
-- **Entrega:** validador de manifesto com mensagens acionáveis (campo + motivo);
-  documento da interface de adaptador para outros harnesses; enumeração dos
-  modos chat/agendado/API no schema (declarados, não implementados).
-- **Exit gate:** manifesto inválido reporta erro acionável; adapter spec escrito.
+- **Goal:** robust validation + clear errors + adapter spec + declare the other
+  execution modes.
+- **Deliverable:** manifest validator with actionable messages (field + reason);
+  adapter interface document; enumerate chat/scheduled/api in the schema
+  (declared, not implemented).
+- **Exit gate:** an invalid manifest reports an actionable error; adapter spec written.
 
 ### Stage 4 — Validation
-- **Objetivo:** validar contra os critérios de sucesso reais.
-- **Entrega:** o revisor roda num diff real (arquivo local); um não técnico
-  cria **e** edita um bot ponta a ponta; histórico de runs visível (FR-6).
-- **Exit gate:** critérios de sucesso 1 e 2 do brief demonstrados.
+- **Goal:** validate against the real success criteria.
+- **Deliverable:** the reviewer runs on a real diff (local file); a non-technical
+  user creates **and** edits a bot end-to-end; run history visible (FR-6).
+- **Exit gate:** success criteria 1 and 2 of the brief demonstrated.
 
 ### Stage 5 — Handoff
-- **Objetivo:** deixar o projeto em estado de crescer.
-- **Entrega:** README (rodar/estender), notas de arquitetura, backlog.
-- **Exit gate:** uma pessoa (ou modelo) nova roda o projeto e acha a próxima
-  tarefa só pelas notas.
+- **Goal:** leave the project in a state to grow.
+- **Deliverable:** README (run/extend), architecture notes, backlog.
+- **Exit gate:** a new person (or model) runs the project and finds the next task
+  from the notes alone.
 
-## Backlog (adiado, não descartado)
-- Modo **chat** contínuo · **job agendado** · **endpoint/API**.
-- Outros harnesses (Claude Code, OpenAI, etc.) via adaptador.
-- Orquestração **multi-bot**.
-- **Distribuição/marketplace** de bots.
-- **Memória persistente** de conversa.
-- Plugin de **código** (Cordis) para tooling nativo, evoluindo da skill.
+## Backlog (deferred, not dropped)
+- **Chat** mode · **scheduled** job · **api** endpoint.
+- Other harnesses (Claude Code, OpenAI, etc.) via adapter.
+- **Multi-bot** orchestration.
+- Bot **distribution/marketplace**.
+- **Persistent memory** of conversation.
+- Code **plugin** (Cordis) for native tooling, evolving from the skill.
 
-## Prompt de kickoff (pronto para colar)
+## Kickoff prompt (ready to paste)
 
-> Você vai construir o **OpenBot, MVP**. Anexo: Execution Brief completo.
-> Comece pelo **Stage 1** do Plano de Produção: uma skill DSH `openbot` que lê
-> um manifesto `openbot.yaml` e executa **um** bot em modo tarefa, devolvendo o
-> resultado.
-> Entregue: o schema v1 do manifesto, a skill `openbot` (SKILL.md + references)
-> e o bot de exemplo **"revisor de código"** rodando de ponta a ponta.
-> Não implemente chat/agendado/API, outros harnesses, nem um app web separado.
-> Reporte contra o exit gate do Stage 1.
+> You are building **OpenBot, MVP**. Attached: the full Execution Brief.
+> Start at **Stage 1** of the Production Plan: a DSH skill `openbot` that reads
+> an `openbot.yaml` manifest and executes **one** bot in task mode, returning the
+> result.
+> Deliver: the schema v1, the `openbot` skill (SKILL.md + references), and the
+> example **"code reviewer"** bot running end-to-end.
+> Do not implement chat/scheduled/api, other harnesses, or a separate web app.
+> Report against Stage 1's exit gate.
 >
-> *(Adaptação: para Claude, envolva as seções do brief em tags
-> `<requirements>`/`<scope>`/`<task>`; para modelos o-series/DeepSeek-R1,
-> mantenha o system prompt mínimo e não peça raciocínio passo a passo.)*
+> *(Adaptation: for Claude, wrap the brief sections in tags
+> `<requirements>`/`<scope>`/`<task>`; for o-series/DeepSeek-R1, keep the system
+> prompt minimal and do not request step-by-step reasoning.)*
 
-## Como entregar a um modelo de execução
-- Alimente **um estágio por vez**, sempre anexando o brief (ou as seções
-  Scope/FR/NFR + o estágio atual).
-- Inicie o estágio com: "Construa o Stage N. Estado atual: ... . Exatamente o
-  que o Stage N deve produzir e seu exit gate: ...".
-- Peça ao modelo para **reportar contra o exit gate**, não apenas "pronto".
-- Se o contexto apertar, anexe só Scope + FRs + NFRs + o estágio atual.
+## How to hand off to an execution model
+- Feed **one stage at a time**, always attaching the brief (or the Scope/FR/NFR
+  sections + the current stage).
+- Start the stage with: "Build Stage N. Current state: ... . Exactly what Stage
+  N must produce and its exit gate: ...".
+- Ask the model to **report against the exit gate**, not just "done".
+- If context is tight, attach only Scope + FRs + NFRs + the current stage.

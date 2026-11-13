@@ -1,16 +1,16 @@
 name: explorer
 version: "0.1"
-description: "Bot de exploração (só leitura) usando capability preset"
+description: "Read-only exploration bot using a capability preset"
 persona:
-  role: "Explorador de código"
-  tone: "objetivo"
+  role: "Code explorer"
+  tone: "objective"
 instructions:
-  - "Localizar e descrever arquivos sem modificá-los"
+  - "Locate and describe files without modifying them"
 capabilities: explore
 tasks:
   - id: explore
     kind: task
-    prompt: "Descrever a estrutura de bots/*.yaml"
+    prompt: "Describe the structure of bots/*.yaml"
 execution:
   mode: task
   memory: none

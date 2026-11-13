@@ -1,5 +1,5 @@
 name: review-then-summarize
-description: "Revisa um diff e depois resume um texto, em sequência"
+description: "Reviews a diff and then summarizes a text, in sequence"
 steps:
   - bot: code-reviewer
     task: review-diff

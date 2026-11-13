@@ -1,77 +1,95 @@
-# OpenBot — Schema `openbot.yaml` v1.1
+# OpenBot — `openbot.yaml` schema v1.1
 
-Specificação canônica do manifesto de bot do OpenBot. Um bot é declarado num
-arquivo YAML (JSON também é aceito) e executado por um runner dentro de um
-harness de IA (MVP: DSH).
+Canonical specification of the OpenBot bot manifest. A bot is declared in a YAML
+file (JSON is also accepted) and executed by a runner inside an AI harness
+(MVP: DSH).
 
-## Campos
+## Fields
 
-| Campo | Tipo | Obrigatório | Descrição |
+| Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | sim | Nome do bot, kebab-case (`[a-z0-9]+(-[a-z0-9]+)*`), único entre os bots. |
-| `version` | string | sim | Versão do manifesto (ex.: `"0.1"`). |
-| `description` | string | não | Uma linha, exibida em listas/seleção. |
-| `persona` | object | sim | Personalidade / papel do bot. |
-| `persona.role` | string | sim | Papel que o bot assume (vira o system prompt da execução). |
-| `persona.tone` | string | não | Tom de voz. |
-| `persona.constraints` | list<string> | não | Limites permanentes (o que o bot nunca faz). |
-| `instructions` | list<string> | sim (≥1) | Diretrizes permanentes do bot. |
-| `tools` | object | não | Ferramentas permitidas. |
-| `tools.harness` | list<string> | não | Allowlist de ferramentas nativas do harness. |
-| `tools.mcp` | list<string> | não | Servidores MCP a anexar. |
-| `tasks` | list<object> | sim (≥1) | O que o bot faz. |
-| `tasks[].id` | string | sim | Identificador único da tarefa (dentro do bot). |
-| `tasks[].kind` | enum | sim | `task` \| `chat` \| `scheduled` \| `api`. |
-| `tasks[].prompt` | string | sim | A tarefa / comportamento a executar. |
-| `tasks[].inputs` | object | não | Entradas (chave → valor). |
-| `tasks[].output` | string | não | Caminho do artefato de saída (task/scheduled/api). |
-| `tasks[].schedule` | string | não | Cron ou intervalo (`every 1h`); obrigatório p/ `scheduled`. |
-| `tasks[].route` | string | não | Caminho HTTP (ex.: `/echo`); obrigatório p/ `api`. |
-| `execution` | object | não | Modo de execução padrão. |
-| `execution.mode` | enum | não | `task` (default) \| `chat` \| `scheduled` \| `api`. |
-| `execution.memory` | enum | não | `none` (default) \| `session` (para `chat`). |
+| `name` | string | yes | Bot name, kebab-case (`[a-z0-9]+(-[a-z0-9]+)*`), unique across bots. |
+| `version` | string | yes | Manifest version (e.g. `"0.1"`). |
+| `description` | string | no | One line, shown in lists/selection. |
+| `persona` | object | yes | The bot's personality / role. |
+| `persona.role` | string | yes | Role the bot assumes (becomes the system prompt). |
+| `persona.tone` | string | no | Tone of voice. |
+| `persona.constraints` | list<string> | no | Permanent limits (what the bot never does). |
+| `instructions` | list<string> | yes (≥1) | Standing guidelines. |
+| `tools` | object | no | Allowed tools. |
+| `tools.harness` | list<string> | no | Allowlist of native harness tools. |
+| `tools.mcp` | list<string> | no | MCP servers to attach. |
+| `tasks` | list<object> | yes (≥1) | What the bot does. |
+| `tasks[].id` | string | yes | Unique task identifier (within the bot). |
+| `tasks[].kind` | enum | yes | `task` \| `chat` \| `scheduled` \| `api`. |
+| `tasks[].prompt` | string | yes | The task / behavior to run. |
+| `tasks[].inputs` | object | no | Inputs (key → value). |
+| `tasks[].output` | string | no | Output artifact path (task/scheduled/api). |
+| `tasks[].schedule` | string | no | Cron or interval (`every 1h`); required for `scheduled`. |
+| `tasks[].route` | string | no | HTTP path (e.g. `/echo`); required for `api`. |
+| `execution` | object | no | Default execution mode. |
+| `execution.mode` | enum | no | `task` (default) \| `chat` \| `scheduled` \| `api`. |
+| `execution.memory` | enum | no | `none` (default) \| `session` \| `history`. |
+| `capabilities` | enum | no | `explore` \| `plan` \| `general` — shorthand for `tools.harness`. |
 
-## Regras de validação (FR-7)
+## Validation rules (FR-7)
 
-O runner deve **rejeitar e reportar** (campo + motivo), nunca adivinhar valores:
+The runner must **reject and report** (field + reason), never guess:
 
-1. `name` ausente ou fora do padrão kebab-case → **erro**.
-2. `version` ausente → **erro**.
-3. `persona.role` ausente ou vazio → **erro**.
-4. `instructions` ausente ou lista vazia → **erro**.
-5. `tasks` ausente ou lista vazia → **erro**.
-6. `tasks[].id` duplicado → **erro**.
-7. `tasks[].kind` fora do enum → **erro**.
-8. `kind: scheduled` sem `tasks[].schedule` → **erro**.
-9. `kind: api` sem `tasks[].route` → **erro**.
-10. `tools.harness` com nome de ferramenta desconhecido → **aviso** (não bloqueia).
+1. `name` missing or not kebab-case → **error**.
+2. `version` missing → **error**.
+3. `persona.role` missing/empty → **error**.
+4. `instructions` missing or empty list → **error**.
+5. `tasks` missing or empty list → **error**.
+6. duplicate `tasks[].id` → **error**.
+7. `tasks[].kind` outside the enum → **error**.
+8. `kind: scheduled` without `tasks[].schedule` → **error**.
+9. `kind: api` without `tasks[].route` → **error**.
+10. `capabilities` outside `explore|plan|general` → **error**.
+11. unknown name in `tools.harness` → **warning** (non-blocking).
 
-## Modos de execução
+## Execution modes
 
-- `task` — 1 execução → resultado (**implementado**).
-- `chat` — conversa multi-turno, memória `session` em memória (**implementado**).
-- `scheduled` — agendado/sob demanda (**declarado**; `tools/schedule-openbot.mjs`).
-- `api` — endpoint HTTP (**declarado**; `tools/serve-openbot.mjs`).
+- `task` — one execution → result (**implemented**).
+- `chat` — multi-turn conversation, in-memory `session` (**implemented**).
+- `scheduled` — scheduled / on-demand (**declared**; `tools/schedule-openbot.mjs`).
+- `api` — HTTP endpoint (**declared**; `tools/serve-openbot.mjs`).
 
-## Exemplo mínimo
+## Capability presets
+
+| Preset | Tools |
+|---|---|
+| `explore` | read, grep, glob, list (read-only) |
+| `plan` | read, grep, glob (read-only, no shell) |
+| `general` | all harness tools |
+
+`tools` takes precedence over `capabilities` when both are present.
+
+## Compose (multi-bot)
+
+A `compose.yaml` (`mode: compose`, `steps`, `aggregate`) runs several child bots
+as **native harness subagents** and aggregates the results. Example:
+`sample/compose.yaml`.
+
+## Minimal example
 
 ```yaml
 name: code-reviewer
 version: "0.1"
-description: "Revisa código com foco em bugs e segurança"
+description: "Reviews code with a focus on bugs and security"
 persona:
   role: "Senior code reviewer"
-  tone: "direto, construtivo"
+  tone: "direct, constructive"
   constraints:
-    - "Não sugerir mudanças fora do diff"
+    - "Never suggest changes outside the diff"
 instructions:
-  - "Priorizar bugs e segurança antes de estilo"
+  - "Prioritize bugs and security before style"
 tools:
   harness: [read, grep, glob]
 tasks:
   - id: review-diff
     kind: task
-    prompt: "Revisar o código em inputs.code_path e devolver um relatório"
+    prompt: "Review the code in inputs.code_path and return a report"
     inputs:
       code_path: "./sample/buggy.py"
     output: "review-report.md"
@@ -80,25 +98,7 @@ execution:
   memory: none
 ```
 
-Runner de referência: `.agents/skills/openbot/` (skill `openbot`).
-> execution.memory: 
-one (default) | session (chat) | history (persistido, ots/<name>.memory.jsonl).
+Reference runner: `.agents/skills/openbot/` (skill `openbot`).
 
-## Capabilities (presets)
-
-`capabilities` (opcional): `explore` | `plan` | `general` — atalho para
-`tools.harness`.
-
-| Preset | Ferramentas |
-|---|---|
-| `explore` | read, grep, glob, list (só leitura) |
-| `plan` | read, grep, glob (só leitura, sem shell) |
-| `general` | todas as ferramentas do harness |
-
-`tools` prevalece sobre `capabilities` quando ambos estão presentes.
-
-## Compose (multi-bot)
-
-Um `compose.yaml` (`mode: compose`, `steps`, `aggregate`) roda vários bots-filhos
-como **subagentes nativos do harness** e agrega os resultados. Exemplo:
-`sample/compose.yaml`.
+> `execution.memory`: `none` (default) | `session` (chat) | `history` (persisted
+> to `bots/<name>.memory.jsonl`, via `memory-openbot.mjs`).

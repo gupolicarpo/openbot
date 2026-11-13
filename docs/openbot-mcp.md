@@ -1,22 +1,21 @@
 # OpenBot — MCP server
 
-O OpenBot também é um **MCP server** (sem dependências): expõe os scripts como
-tools MCP, usáveis por qualquer agente com cliente MCP — DSH, Claude Code,
-Codex/ChatGPT.
+OpenBot is also a **dependency-free MCP server**: it exposes the scripts as MCP
+tools, usable by any agent with an MCP client — DSH, Claude Code, Codex/ChatGPT.
 
 ## Tools
 - `openbot_list` · `openbot_validate` · `openbot_run` · `openbot_memory` ·
   `openbot_orchestrate` · `openbot_pack`
 
-## Conectar
+## Connect
 
-Comando do servidor: `node tools/mcp-openbot.mjs`
+Server command: `node tools/mcp-openbot.mjs`
 
 ### Claude Code
 ```bash
 claude mcp add openbot -- node tools/mcp-openbot.mjs
 ```
-ou `.mcp.json` no projeto:
+or `.mcp.json` in the project:
 ```json
 { "mcpServers": { "openbot": { "command": "node", "args": ["tools/mcp-openbot.mjs"] } } }
 ```
@@ -25,7 +24,7 @@ ou `.mcp.json` no projeto:
 ```bash
 codex mcp add openbot -- node tools/mcp-openbot.mjs
 ```
-ou `~/.codex/config.toml`:
+or `~/.codex/config.toml`:
 ```toml
 [mcp_servers.openbot]
 command = "node"
@@ -33,10 +32,10 @@ args = ["tools/mcp-openbot.mjs"]
 ```
 
 ### DSH
-Adicione o servidor à configuração MCP do seu perfil (como o servidor `rea`),
-apontando para `node tools/mcp-openbot.mjs`.
+Add the server to your profile's MCP configuration (like the `rea` server),
+pointing at `node tools/mcp-openbot.mjs`.
 
-## Testar manualmente
+## Test manually
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node tools/mcp-openbot.mjs
 ```

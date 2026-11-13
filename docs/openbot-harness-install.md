@@ -1,71 +1,72 @@
-# OpenBot — Instalação por harness
+# OpenBot — Per-harness install
 
-A skill `openbot` é **portável**: usa o formato Agent Skills (`SKILL.md`), lido
-por DSH, Claude Code e Codex. Os mesmos arquivos funcionam nos três harnesses.
+The `openbot` skill is **portable**: it uses the Agent Skills format
+(`SKILL.md`), read by DSH, Claude Code and Codex. The same files work in all
+three.
 
-## Instalar (automatizado)
+## Install (automated)
 
 ```bash
 node tools/install-openbot.mjs <harness...> [--project]
 ```
 
-| Harness | Diretório de skills |
+| Harness | Skills directory |
 |---|---|
 | `dsh` | `.agents/skills/openbot/` |
 | `claude` | `.claude/skills/openbot/` |
 | `codex` | `.codex/skills/openbot/` |
-| `all` (default) | os três |
+| `all` (default) | all three |
 
-- `--project`: instala em `<cwd>/.<harness>/skills` (raiz do projeto).
-- sem `--project` (default): instala em `~/.<harness>/skills` (usuário).
+- `--project`: install into `<cwd>/.<harness>/skills` (project root).
+- without `--project` (default): install into `~/.<harness>/skills` (user).
 
 ```bash
-node tools/install-openbot.mjs claude codex     # usuário
-node tools/install-openbot.mjs all --project    # projeto
+node tools/install-openbot.mjs claude codex     # user
+node tools/install-openbot.mjs all --project    # project
 ```
 
-## Instalar (manual)
+## Install (manual)
 
 ```bash
 # Claude Code
-cp -r .agents/skills/openbot ~/.claude/skills/openbot      # usuário
-cp -r .agents/skills/openbot .claude/skills/openbot        # projeto
+cp -r .agents/skills/openbot ~/.claude/skills/openbot      # user
+cp -r .agents/skills/openbot .claude/skills/openbot        # project
 
 # Codex
-cp -r .agents/skills/openbot ~/.codex/skills/openbot       # usuário
-cp -r .agents/skills/openbot .codex/skills/openbot         # projeto
+cp -r .agents/skills/openbot ~/.codex/skills/openbot       # user
+cp -r .agents/skills/openbot .codex/skills/openbot         # project
 
-# DSH (já é uma skill de projeto neste workspace)
+# DSH (already a project skill in this workspace)
 ```
 
-## Como funciona em cada harness
+## How it works in each harness
 
-- A skill instrui o agente a carregar `openbot.yaml` e *virar* o bot, usando o
-  loop nativo do harness — nenhum código específico por harness.
-- Os scripts em `tools/` (`validate`, `list`, `schedule`, `serve`) são
-  opcionais, chamados via shell, e precisam de `js-yaml` (local ou via
-  `OPENBOT_JSYAML` apontando para o `index.js`).
-- Os manifestos vivem em `bots/*.yaml` no workspace (ou onde o usuário apontar).
+- The skill instructs the agent to load `openbot.yaml` and *become* the bot,
+  using the harness's native loop — no per-harness code.
+- The `tools/` scripts (`validate`, `list`, `schedule`, `serve`) are optional,
+  called via shell, and need `js-yaml` (local or via `OPENBOT_JSYAML`).
+- Manifests live in `bots/*.yaml` in the workspace (or wherever the user points).
 
-## Requisitos
-- Node.js ≥ 20 para os scripts `tools/*.mjs`.
-- `js-yaml` disponível (no `node_modules` local, no DSH instalado, ou via
+## Requirements
+- Node.js ≥ 20 for the `tools/*.mjs` scripts.
+- `js-yaml` available (local `node_modules`, the installed DSH, or via
   `OPENBOT_JSYAML`).
-## Executar programaticamente (delegação)
 
-Para automação (scheduled/api/CI), use o hook que **delega ao agente do
-harness** (em vez de chamar o modelo cru):
+## Run programmatically (delegation)
+
+For automation (scheduled/api/CI), use the hook that **delegates to the harness
+agent** (instead of calling the raw model):
 
 ```bash
 node tools/run-openbot.mjs <bot> --via dsh|claude|codex [--task <id>] [--input k=v ...] [--dry-run]
 ```
 
-- `--via dsh`    → `dsh headless "<instrução>"`
-- `--via claude` → `claude -p "<instrução>"`
-- `--via codex`  → `codex exec "<instrução>"`
-- `--via openai` → fallback: chama a API do modelo diretamente
-- `auto` (default) → detecta o primeiro CLI instalado
-- `--dry-run` → mostra a instrução e o comando exato
+- `--via dsh`    → `dsh headless "<instruction>"`
+- `--via claude` → `claude -p "<instruction>"`
+- `--via codex`  → `codex exec "<instruction>"`
+- `--via openai` → fallback: calls the model API directly
+- `auto` (default) → detects the first installed CLI
+- `--dry-run` → shows the instruction and the exact command
 
-A skill `openbot` precisa estar instalada no harness alvo (ver acima). Assim o
-agente carrega a skill, vira o bot e usa as ferramentas — o caminho A completo.
+The `openbot` skill must be installed in the target harness (see above). The
+agent then loads the skill, becomes the bot, and uses its tools — the full path A.

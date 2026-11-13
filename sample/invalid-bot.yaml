@@ -1,4 +1,4 @@
-# invalid-bot.yaml — manifesto com defeitos intencionais para demonstrar o validador.
+# invalid-bot.yaml — manifest with intentional defects to demonstrate the validator.
 name: "Not Kebab Case!"
 persona:
   role: ""

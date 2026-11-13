@@ -1,23 +1,23 @@
 # OpenBot — Smoke test (cross-harness)
 
-Verificação mínima de portabilidade em cada harness. Rode após instalar os CLIs.
+Minimal portability check per harness. Run after installing the CLIs.
 
-## Pré-requisitos
+## Prerequisites
 - Node.js ≥ 20.
-- `claude` e/ou `codex` no PATH.
-- `js-yaml` disponível (local ou via `OPENBOT_JSYAML`).
+- `claude` and/or `codex` on PATH.
+- `js-yaml` available (local or via `OPENBOT_JSYAML`).
 
-## 1. DSH (referência — já validado)
-- [x] skill carregada (catálogo mostra `openbot`).
-- [x] bots validados (`node tools/validate-all.mjs bots`).
+## 1. DSH (reference — already validated)
+- [x] skill loaded (catalog shows `openbot`).
+- [x] bots validated (`node tools/validate-all.mjs bots`).
 - [x] MCP server (`node tools/mcp-openbot.mjs`).
 
 ## 2. Claude Code
-1. Instalar a skill:
+1. Install the skill:
    `node tools/install-openbot.mjs claude`
-2. Listar bots:
+2. List bots:
    `claude -p "use the openbot skill to list the bots"`
-3. Rodar um bot:
+3. Run a bot:
    `claude -p "use the openbot skill to run the bot code-reviewer on sample/change.patch"`
 4. MCP:
    `claude mcp add openbot -- node tools/mcp-openbot.mjs`
@@ -28,7 +28,7 @@ Verificação mínima de portabilidade em cada harness. Rode após instalar os C
 3. `codex exec "use the openbot skill to run the bot code-reviewer on sample/change.patch"`
 4. `codex mcp add openbot -- node tools/mcp-openbot.mjs`
 
-## 4. Registro de resultados
+## 4. Results log
 | Harness | Skill (list) | Skill (run) | MCP (openbot_list) |
 |---|---|---|---|
 | DSH | ✅ | ✅ | ✅ |

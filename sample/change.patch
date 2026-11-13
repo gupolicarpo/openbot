@@ -12,7 +12,7 @@ index 0000000..1111111 100644
 +    return db.query(f"SELECT * FROM users WHERE id = {user_id}")
 +
 +def run_command(cmd):
-+    # executa um comando de shell montado a partir de entrada do usuário
++    # runs a shell command built from user input
 +    subprocess.run(cmd, shell=True)
 +
 +def save_secret(token):

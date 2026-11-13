@@ -1,6 +1,6 @@
 name: review-then-summarize
 mode: compose
-description: "Revisa um diff e resume um texto via subagentes nativos"
+description: "Reviews a diff and summarizes a text via native subagents"
 steps:
   - bot: code-reviewer
     task: review-diff
@@ -10,4 +10,4 @@ steps:
     task: summarize
     inputs:
       source_path: ./sample/article.txt
-aggregate: "Combine o relatório de revisão e o resumo num único documento"
+aggregate: "Combine the review report and the summary into a single document"

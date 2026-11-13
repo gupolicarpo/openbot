@@ -1,28 +1,28 @@
-# buggy.py — amostra de entrada para o bot "code-reviewer".
-# Contém defeitos intencionais para demonstração.
+# buggy.py — sample input for the "code-reviewer" bot.
+# Contains intentional defects for demonstration.
 
 import sqlite3
 
 
 def get_user(username, db_path="users.db"):
     conn = sqlite3.connect(db_path)
-    # DEFEITO: injeção de SQL — o nome é interpolado direto na query.
+    # BUG: SQL injection — the name is interpolated directly into the query.
     query = f"SELECT * FROM users WHERE name = '{username}'"
     cur = conn.execute(query)
     return cur.fetchall()
 
 
 def add_item(item, items=[]):
-    # DEFEITO: argumento padrão mutável — a mesma lista é compartilhada.
+    # BUG: mutable default argument — the same list is shared across calls.
     items.append(item)
     return items
 
 
 def divide(a, b):
-    # RISCO: divisão por zero não tratada.
+    # RISK: division by zero not handled.
     return a / b
 
 
 def process(data):
-    # SEGURANÇA: eval() sobre entrada possivelmente não confiável.
+    # SECURITY: eval() on potentially untrusted input.
     return eval(data)
