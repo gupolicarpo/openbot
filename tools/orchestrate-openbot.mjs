@@ -43,5 +43,5 @@ for (let i = 0; i < steps.length; i++) {
   console.log(`   run: node tools/run-openbot.mjs ${bot.name} --task ${task.id}${ins.length ? ' --input ' + ins.join(' --input ') : ''}`);
 }
 if (isCompose) {
-  console.log(`\ncompose: cada passo roda como subagente nativo do harness (DSH subagent/team, Claude Code /agents, Codex subagents) e o resultado é agregado com: "${pipe.aggregate ?? ''}"`);
+  console.log(`\ncompose: each step runs as a native harness subagent (DSH subagent/team, Claude Code /agents, Codex subagents) and the results are aggregated with: "${pipe.aggregate ?? ''}"`);
 }

@@ -4,27 +4,28 @@ Compact reference for the runner. A manifest is a YAML (or JSON) object.
 
 ## Fields
 
-| Campo | Tipo | Obrigatório |
+| Field | Type | Required |
 |---|---|---|
-| `name` | string (kebab-case) | sim |
-| `version` | string | sim |
-| `description` | string | não |
-| `persona.role` | string | sim |
-| `persona.tone` | string | não |
-| `persona.constraints` | list<string> | não |
-| `instructions` | list<string> (≥1) | sim |
-| `tools.harness` | list<string> | não |
-| `tools.mcp` | list<string> | não |
-| `tasks` | list<object> (≥1) | sim |
-| `tasks[].id` | string (único) | sim |
-| `tasks[].kind` | task\|chat\|scheduled\|api | sim |
-| `tasks[].prompt` | string | sim |
-| `tasks[].inputs` | object | não |
-| `tasks[].output` | string | não (task/scheduled/api) |
-| `tasks[].schedule` | string | não (obrigatório p/ scheduled) |
-| `tasks[].route` | string | não (obrigatório p/ api) |
-| `execution.mode` | task\|chat\|scheduled\|api | não (default `task`) |
-| `execution.memory` | none\|session | não (default `none`; `session` p/ chat) |
+| `name` | string (kebab-case) | yes |
+| `version` | string | yes |
+| `description` | string | no |
+| `persona.role` | string | yes |
+| `persona.tone` | string | no |
+| `persona.constraints` | list<string> | no |
+| `instructions` | list<string> (≥1) | yes |
+| `tools.harness` | list<string> | no |
+| `tools.mcp` | list<string> | no |
+| `tasks` | list<object> (≥1) | yes |
+| `tasks[].id` | string (unique) | yes |
+| `tasks[].kind` | task\|chat\|scheduled\|api | yes |
+| `tasks[].prompt` | string | yes |
+| `tasks[].inputs` | object | no |
+| `tasks[].output` | string | no (task/scheduled/api) |
+| `tasks[].schedule` | string | no (required for scheduled) |
+| `tasks[].route` | string | no (required for api) |
+| `execution.mode` | task\|chat\|scheduled\|api | no (default `task`) |
+| `execution.memory` | none\|session\|history | no (default `none`) |
+| `capabilities` | explore\|plan\|general | no (shorthand for `tools.harness`) |
 
 ## Validation rules
 
@@ -39,48 +40,52 @@ Reject and report (field + reason); never guess:
 7. `tasks[].kind` not in enum → error.
 8. `kind: scheduled` without `tasks[].schedule` → error.
 9. `kind: api` without `tasks[].route` → error.
-10. unknown name in `tools.harness` → warn (non-blocking).
+10. `capabilities` outside `explore|plan|general` → error.
+11. unknown name in `tools.harness` → warn (non-blocking).
 
-## Modos
-- `task` — 1 execução → resultado (implementado).
-- `chat` — conversa multi-turno (implementado; memória `session` em memória).
-- `scheduled` — execução agendada/sob demanda (declarado; `tools/schedule-openbot.mjs`).
-- `api` — endpoint HTTP (declarado; `tools/serve-openbot.mjs`).
+## Modes
+- `task` — 1 execution → result (implemented).
+- `chat` — multi-turn conversation, in-memory `session` (implemented).
+- `scheduled` — scheduled / on-demand (declared; `tools/schedule-openbot.mjs`).
+- `api` — HTTP endpoint (declared; `tools/serve-openbot.mjs`).
 
 ## Run record (JSONL)
 
-Uma linha por run em `bots/<name>.runs.jsonl`:
+One line per run in `bots/<name>.runs.jsonl`:
 
 ```json
 {"bot":"<name>","task":"<task.id>","status":"completed|failed","result":"<output path>","startedAt":"<ISO>","finishedAt":"<ISO>"}
 ```
 
-## Validator
+## Memory
 
-Use o validador de referência antes de rodar:
-
-```bash
-node tools/validate-openbot.mjs bots/<nome>.yaml
-```
-
-Exit 0 = válido; exit 1 = inválido (campo + motivo).
-> execution.memory: 
-one (default) | session (chat em memória) | history (persistido em ots/<name>.memory.jsonl via memory-openbot.mjs).
+`execution.memory`: `none` (default) | `session` (in-memory chat) | `history`
+(persisted in `bots/<name>.memory.jsonl` via `memory-openbot.mjs`).
 
 ## Capabilities (presets)
 
-`capabilities` (opcional) é um atalho para `tools.harness`:
+`capabilities` (optional) is a shorthand for `tools.harness`:
 
-| Preset | Ferramentas equivalentes |
+| Preset | Equivalent tools |
 |---|---|
-| `explore` | read, grep, glob, list (só leitura) |
-| `plan` | read, grep, glob (só leitura, sem shell/edição) |
-| `general` | todas as ferramentas do harness |
+| `explore` | read, grep, glob, list (read-only) |
+| `plan` | read, grep, glob (read-only, no shell/edits) |
+| `general` | all harness tools |
 
-Se `tools` estiver presente, ele prevalece sobre `capabilities`.
+`tools` takes precedence over `capabilities` when both are present.
 
 ## Compose (multi-bot)
 
-Um `compose.yaml` lista `steps` (bots-filhos) e um `aggregate`. O runner no modo
-`compose` despacha cada filho como **subagente nativo do harness** e agrega os
-resumos. Veja o SKILL.md (modo compose).
+A `compose.yaml` lists `steps` (child bots) and an `aggregate`. The runner in
+`compose` mode dispatches each child as a **native harness subagent** and
+aggregates the summaries. See SKILL.md (compose mode).
+
+## Validator
+
+Use the reference validator before running:
+
+```bash
+node tools/validate-openbot.mjs bots/<name>.yaml
+```
+
+Exit 0 = valid; exit 1 = invalid (field + reason).

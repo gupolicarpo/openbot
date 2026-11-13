@@ -7,39 +7,41 @@ in a ledger.
 
 ## Question → field map
 
-| # | Pergunta (PT) | Campo | Default / recomendação |
+(The questions below are examples; ask them in the user's language.)
+
+| # | Question (EN) | Field | Default / recommendation |
 |---|---|---|---|
-| 1 | Qual o nome do bot? | `name` | kebab-case, único |
-| 2 | Qual o papel/personalidade dele? | `persona.role` | — |
-| 3 | Qual o tom de voz? | `persona.tone` | "direto, claro" |
-| 4 | O que ele nunca deve fazer? | `persona.constraints` | — |
-| 5 | Quais instruções permanentes? | `instructions` | — |
-| 6 | Quais ferramentas ele pode usar? | `tools.harness` / `tools.mcp` | read-only (`read`, `grep`, `glob`) |
-| 7 | Qual a tarefa principal? | `tasks[0].prompt` | — |
-| 8 | Quais entradas? | `tasks[0].inputs` | — |
-| 9 | Onde salvar a saída? | `tasks[0].output` | `<name>-report.md` |
-| 10 | Modo de execução? | `execution.mode` | `task` (MVP) |
+| 1 | What is the bot's name? | `name` | kebab-case, unique |
+| 2 | What is its role/personality? | `persona.role` | — |
+| 3 | What is its tone of voice? | `persona.tone` | "direct, clear" |
+| 4 | What must it never do? | `persona.constraints` | — |
+| 5 | What standing instructions? | `instructions` | — |
+| 6 | Which tools can it use? | `tools.harness` / `tools.mcp` | read-only (`read`, `grep`, `glob`) |
+| 7 | What is the main task? | `tasks[0].prompt` | — |
+| 8 | What inputs? | `tasks[0].inputs` | — |
+| 9 | Where to save the output? | `tasks[0].output` | `<name>-report.md` |
+| 10 | Execution mode? | `execution.mode` | `task` (MVP) |
 
 ## Flow (create)
 
-1. **Name + role** (1–2 perguntas).
+1. **Name + role** (1–2 questions).
 2. **Tone + constraints + instructions** (batch).
-3. **Tools** — oferecer o default read-only; perguntar mais só se precisar.
+3. **Tools** — offer the read-only default; ask more only if needed.
 4. **Task** — prompt, inputs, output.
-5. **Draft & confirm** — mostrar um resumo compacto (não o YAML cru) e confirmar.
-6. **Write + validate** — escrever `bots/<name>.yaml`, validar contra
-   `references/schema.md`, corrigir qualquer erro e reportar o caminho.
+5. **Draft & confirm** — show a compact summary (not raw YAML) and confirm.
+6. **Write + validate** — write `bots/<name>.yaml`, validate against
+   `references/schema.md`, fix any error and report the path.
 
 ## Flow (edit)
 
-1. Ler o `bots/<name>.yaml` atual.
-2. Resumir ao usuário (1–2 linhas).
-3. Perguntar **apenas** o que muda.
-4. Aplicar o delta, manter o resto, subir `version`, revalidar e reportar.
+1. Read the current `bots/<name>.yaml`.
+2. Summarize it to the user (1–2 lines).
+3. Ask **only** what changes.
+4. Apply the delta, keep the rest, bump `version`, re-validate and report.
 
-## Validação antes de finalizar
+## Validation before finishing
 
-- `name` kebab-case e único.
-- `persona.role`, `instructions`, `tasks` presentes e não vazios.
+- `name` kebab-case and unique.
+- `persona.role`, `instructions`, `tasks` present and non-empty.
 - `tasks[].kind` = `task` (MVP).
-- Escrever o arquivo em UTF-8 (sem BOM).
+- Write the file as UTF-8 (no BOM).
