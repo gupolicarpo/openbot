@@ -3,11 +3,9 @@
 // Usage: node tools/validate-openbot.mjs <path-to-manifest.yaml>
 // Exit codes: 0 valid, 1 invalid, 2 usage/internal error.
 
-import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-
-const require = createRequire(import.meta.url);
+import yaml from './lib/yaml.mjs';
 
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const KINDS = ['task', 'chat', 'scheduled', 'api'];
@@ -17,19 +15,6 @@ const KNOWN_HARNESS_TOOLS = new Set([
   'read', 'grep', 'glob', 'write', 'edit', 'bash', 'pwsh', 'web_search',
   'web_fetch', 'subagent', 'workflow', 'list', 'ask_user_question',
 ]);
-
-function loadYaml() {
-  try { return require('js-yaml'); } catch {}
-  const candidates = [
-    process.env.OPENBOT_JSYAML,
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml/index.js',
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml',
-  ].filter(Boolean);
-  for (const c of candidates) {
-    if (existsSync(c)) { try { return require(c); } catch {} }
-  }
-  return null;
-}
 
 function validate(doc) {
   const errors = [];
@@ -117,12 +102,10 @@ if (!arg) { console.error('usage: node tools/validate-openbot.mjs <manifest.yaml
 const abs = resolve(arg);
 let raw;
 try { raw = readFileSync(abs, 'utf8'); } catch (e) { console.error(`❌ cannot read ${abs}: ${e.code}`); process.exit(2); }
-const yaml = loadYaml();
 let doc;
 try {
   if (abs.endsWith('.json') || raw.trimStart().startsWith('{')) doc = JSON.parse(raw);
   else {
-    if (!yaml) { console.error('❌ js-yaml not found; install it or set OPENBOT_JSYAML to its index.js'); process.exit(2); }
     doc = yaml.load(raw);
   }
 } catch (e) { console.error(`❌ ${abs}: parse error: ${e.message}`); process.exit(1); }

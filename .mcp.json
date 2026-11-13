@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openbot": {
+      "command": "node",
+      "args": ["tools/mcp-openbot.mjs"]
+    }
+  }
+}

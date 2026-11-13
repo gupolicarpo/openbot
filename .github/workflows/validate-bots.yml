@@ -14,9 +14,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install js-yaml
-        run: npm install js-yaml@4 --prefix /tmp/openbot-deps
       - name: Validate bots
         run: node tools/validate-all.mjs
-        env:
-          OPENBOT_JSYAML: /tmp/openbot-deps/node_modules/js-yaml/index.js

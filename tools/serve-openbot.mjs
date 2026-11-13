@@ -2,27 +2,13 @@
 // serve-openbot.mjs — expose kind: api bots over HTTP.
 // Usage: node tools/serve-openbot.mjs [port] [bots-dir]
 
-import { createRequire } from 'node:module';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import http from 'node:http';
-
-const require = createRequire(import.meta.url);
-function loadYaml() {
-  try { return require('js-yaml'); } catch {}
-  const candidates = [
-    process.env.OPENBOT_JSYAML,
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml/index.js',
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml',
-  ].filter(Boolean);
-  for (const c of candidates) if (existsSync(c)) { try { return require(c); } catch {} }
-  return null;
-}
+import yaml from './lib/yaml.mjs';
 
 const port = Number(process.argv[2] ?? 3081);
 const botsDir = resolve(process.argv[3] ?? 'bots');
-const yaml = loadYaml();
-if (!yaml) { console.error('❌ js-yaml not found'); process.exit(2); }
 
 const routes = new Map();
 for (const f of readdirSync(botsDir)) {

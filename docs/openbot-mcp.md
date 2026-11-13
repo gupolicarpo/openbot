@@ -9,26 +9,31 @@ tools, usable by any agent with an MCP client — DSH, Claude Code, Codex/ChatGP
 
 ## Connect
 
-Server command: `node tools/mcp-openbot.mjs`
+Server command: `node tools/mcp-openbot.mjs` — no npm install needed (`js-yaml` is vendored in
+`tools/vendor/`). The server pins its working directory to the repo root, so repo-relative
+arguments such as `sample/pipeline.yaml` work no matter where the client was started.
+When registering it globally, always use the **absolute** path to the script: a relative
+path only works if the client happens to start in the repo root.
 
 ### Claude Code
+The repo ships a project-scoped `.mcp.json`, so opening Claude Code in the repo root is
+enough: approve the `openbot` server when asked (or later via `/mcp`), and its tools appear as
+`mcp__openbot__openbot_list`, `mcp__openbot__openbot_validate`, …
+
+To use it from any folder, register it with an absolute path instead:
 ```bash
-claude mcp add openbot -- node tools/mcp-openbot.mjs
-```
-or `.mcp.json` in the project:
-```json
-{ "mcpServers": { "openbot": { "command": "node", "args": ["tools/mcp-openbot.mjs"] } } }
+claude mcp add --scope user openbot -- node <absolute-path-to-repo>/tools/mcp-openbot.mjs
 ```
 
 ### Codex (OpenAI)
 ```bash
-codex mcp add openbot -- node tools/mcp-openbot.mjs
+codex mcp add openbot -- node <absolute-path-to-repo>/tools/mcp-openbot.mjs
 ```
 or `~/.codex/config.toml`:
 ```toml
 [mcp_servers.openbot]
 command = "node"
-args = ["tools/mcp-openbot.mjs"]
+args = ["<absolute-path-to-repo>/tools/mcp-openbot.mjs"]
 ```
 
 ### DSH

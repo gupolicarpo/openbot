@@ -44,13 +44,12 @@ cp -r .agents/skills/openbot .codex/skills/openbot         # project
 - The skill instructs the agent to load `openbot.yaml` and *become* the bot,
   using the harness's native loop — no per-harness code.
 - The `tools/` scripts (`validate`, `list`, `schedule`, `serve`) are optional,
-  called via shell, and need `js-yaml` (local or via `OPENBOT_JSYAML`).
+  called via shell; `js-yaml` is vendored in `tools/vendor/` (no install needed; a local `js-yaml` or `OPENBOT_JSYAML` overrides it).
 - Manifests live in `bots/*.yaml` in the workspace (or wherever the user points).
 
 ## Requirements
 - Node.js ≥ 20 for the `tools/*.mjs` scripts.
-- `js-yaml` available (local `node_modules`, the installed DSH, or via
-  `OPENBOT_JSYAML`).
+- No npm install: `js-yaml` is vendored in `tools/vendor/` (no install needed; a local `js-yaml` or `OPENBOT_JSYAML` overrides it).
 
 ## Run programmatically (delegation)
 

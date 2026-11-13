@@ -7,22 +7,10 @@
 // Usage: node tools/run-openbot.mjs <bot> [--task <id>] [--input k=v ...]
 //        [--via dsh|claude|codex|openai|auto] [--dry-run]
 
-import { createRequire } from 'node:module';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-
-const require = createRequire(import.meta.url);
-function loadYaml() {
-  try { return require('js-yaml'); } catch {}
-  const candidates = [
-    process.env.OPENBOT_JSYAML,
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml/index.js',
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml',
-  ].filter(Boolean);
-  for (const c of candidates) if (existsSync(c)) { try { return require(c); } catch {} }
-  return null;
-}
+import yaml from './lib/yaml.mjs';
 
 const args = process.argv.slice(2);
 const botArg = args[0];
@@ -41,8 +29,6 @@ for (let i = 0; i < args.length; i++) {
 
 if (!botArg) { console.error('usage: node tools/run-openbot.mjs <bot> [--task <id>] [--input k=v ...] [--via dsh|claude|codex|openai|auto] [--dry-run]'); process.exit(2); }
 const path = /\.ya?ml$/i.test(botArg) ? resolve(botArg) : resolve('bots', `${botArg}.yaml`);
-const yaml = loadYaml();
-if (!yaml) { console.error('❌ js-yaml not found'); process.exit(2); }
 let doc;
 try { doc = yaml.load(readFileSync(path, 'utf8')); } catch (e) { console.error(`❌ ${path}: ${e.message}`); process.exit(1); }
 const task = doc.tasks.find((t) => !taskId || t.id === taskId) ?? doc.tasks[0];

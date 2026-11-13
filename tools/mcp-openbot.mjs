@@ -6,28 +6,20 @@
 //   command: node tools/mcp-openbot.mjs
 // Protocol version: 2024-11-05 (content[] / isError).
 
-import { createRequire } from 'node:module';
 import { readFileSync, readdirSync, existsSync, appendFileSync, mkdirSync, rmSync, cpSync, writeFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
-
-const require = createRequire(import.meta.url);
-function loadYaml() {
-  try { return require('js-yaml'); } catch {}
-  const candidates = [
-    process.env.OPENBOT_JSYAML,
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml/index.js',
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml',
-  ].filter(Boolean);
-  for (const c of candidates) if (existsSync(c)) { try { return require(c); } catch {} }
-  return null;
-}
-const yaml = loadYaml();
+import yaml from './lib/yaml.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const BOTS = join(ROOT, 'bots');
+
+// MCP clients launch the server from whatever folder they were started in.
+// Pin the working directory to the repo root so repo-relative paths in tool
+// arguments (sample/pipeline.yaml, bots/x.yaml, pack inputs) always resolve.
+process.chdir(ROOT);
 
 const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const KINDS = ['task', 'chat', 'scheduled', 'api'];
@@ -37,7 +29,6 @@ function resolveBot(arg) {
   return /\.ya?ml$/i.test(String(arg)) ? resolve(String(arg)) : join(BOTS, `${arg}.yaml`);
 }
 function loadBot(arg) {
-  if (!yaml) throw new Error('js-yaml not found; set OPENBOT_JSYAML');
   return yaml.load(readFileSync(resolveBot(arg), 'utf8'));
 }
 
@@ -176,7 +167,11 @@ const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity 
 function send(obj) { process.stdout.write(JSON.stringify(obj) + '\n'); }
 rl.on('line', (line) => {
   let msg;
-  try { msg = JSON.parse(line); } catch { return; }
+  if (!line.trim()) return;
+  try { msg = JSON.parse(line); } catch {
+    send({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } });
+    return;
+  }
   if (msg.method === 'initialize') {
     send({ jsonrpc: '2.0', id: msg.id, result: { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'openbot-mcp', version: '0.1.0' } } });
   } else if (msg.method === 'tools/list') {
@@ -190,5 +185,9 @@ rl.on('line', (line) => {
     }
   } else if (msg.method === 'ping') {
     send({ jsonrpc: '2.0', id: msg.id, result: {} });
+  } else if (msg.id !== undefined && msg.id !== null) {
+    // Any other request must get an answer, or the client waits until timeout.
+    // Messages without an id are notifications (e.g. notifications/initialized): no reply.
+    send({ jsonrpc: '2.0', id: msg.id, error: { code: -32601, message: `Method not found: ${msg.method}` } });
   }
 });

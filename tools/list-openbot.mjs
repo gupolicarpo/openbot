@@ -2,25 +2,11 @@
 // list-openbot.mjs — list bots in bots/*.yaml
 // Usage: node tools/list-openbot.mjs [bots-dir]
 
-import { createRequire } from 'node:module';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-
-const require = createRequire(import.meta.url);
-function loadYaml() {
-  try { return require('js-yaml'); } catch {}
-  const candidates = [
-    process.env.OPENBOT_JSYAML,
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml/index.js',
-    'C:/Users/gupol/AppData/Roaming/npm/node_modules/@deepseek-ai/dsh/node_modules/js-yaml',
-  ].filter(Boolean);
-  for (const c of candidates) if (existsSync(c)) { try { return require(c); } catch {} }
-  return null;
-}
+import yaml from './lib/yaml.mjs';
 
 const botsDir = resolve(process.argv[2] ?? 'bots');
-const yaml = loadYaml();
-if (!yaml) { console.error('❌ js-yaml not found; install it or set OPENBOT_JSYAML'); process.exit(2); }
 
 let entries;
 try { entries = readdirSync(botsDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml')); }
