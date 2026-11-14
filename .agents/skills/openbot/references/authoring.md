@@ -51,14 +51,36 @@ integrations, credentials, network or actions with side effects.
    Name it (e.g. "YouTube transcript → `youtube-transcriber` skill",
    "web → `WebFetch`"). Nothing provides it → it is a **gap**.
 3. **Simplest setup** — the minimal `tools.harness` / `tools.mcp`
-   (read-only unless it must write), `execution.model` (`haiku` for simple
-   text work, `inherit` otherwise) and `execution.memory`.
-4. **Test case** — one `test` per task/chat task: real sample inputs (an
+   (read-only unless it must write) and `execution.memory`.
+4. **Model and effort** — you decide `execution.model` and
+   `execution.effort` from the answers and the instructions you just drafted:
+   the **cheapest pair you expect to meet the acceptance criteria**. Always
+   set both explicitly (no `inherit`), so the bot's cost does not depend on
+   whoever calls it.
+
+   | Model | API price in/out per 1M tokens (Nov 2026) | Pick it when |
+   |---|---|---|
+   | `haiku` | $0.10 / $0.50 | well-defined text work: summarize, extract, classify, format, simple FAQ chat |
+   | `sonnet` | $2 / $10 | judgment or several steps: code review, research with web, multi-step tool use, nuanced writing |
+   | `opus` | $4 / $20 | hard reasoning, long agentic work, or a costly mistake (security, money, irreversible actions) |
+   | `fable` | $8 / $40 | only if the user asks for it, or `opus` at `high` already failed the test |
+
+   | Effort | Pick it when |
+   |---|---|
+   | `low` | short, direct answers; chat; high-volume tasks (`scheduled`, `api`) |
+   | `medium` | the default: a few steps, some checking |
+   | `high` | correctness matters more than speed (review, analysis, code) |
+   | `xhigh` / `max` | only after a lower level failed the test |
+
+   Push the choice down when the bot runs often (`scheduled`, `api`, a busy
+   chat), and up when an error is expensive. Lower effort on a cheaper model
+   comes first; a bigger model is the last lever. Give one line of reasons
+   (e.g. "haiku + low: short summary of one file, runs daily").
+5. **Test case** — one `test` per task/chat task: real sample inputs (an
    existing file, or a small one you will create under `sample/`) or, for a
    chat task, a sample `message`; plus what a good answer must show (`expect`).
-5. **Risks** — does it write files, use the network, cost money, need
+6. **Risks** — does it write files, use the network, cost money, need
    credentials? Say so.
-
 **Gaps:** resolve the ones that are purely technical yourself; bring back to
 the user only decisions that are theirs (a paid API, an account, a scope
 change), as specific questions. **Never invent an integration** that does not
@@ -67,9 +89,10 @@ exist here.
 ## Summary and approval
 
 Show a compact summary (not raw YAML) with: what it does, acceptance criteria,
-how it will work (tools, model), gaps and how they were resolved, the test
-that will be run, and risks. Ask **"Posso criar?"** (in the user's language).
-Stop and wait.
+how it will work (tools, **model + effort with the one-line reason**), gaps
+and how they were resolved, the test that will be run, and risks. Say the
+user can change the model or effort before approving. Ask **"Posso criar?"**
+(in the user's language). Stop and wait.
 
 ## Write, export, verify
 
@@ -92,6 +115,10 @@ After an explicit yes:
      `expect`, quoting the output as evidence (✅/❌ per criterion).
    - **Fail?** Diagnose. If the bot definition is wrong (unclear prompt,
      missing instruction, wrong tool), fix the manifest, re-export and re-run.
+     If the instructions are right but the model could not do the work
+     (shallow reasoning, missed steps), go up one level, effort first and
+     then model, and say so in the report. If the user picked the model or
+     effort themselves, ask before changing it.
      If the *requirement* was wrong or impossible, go back to the user. Stop
      after **3 attempts** and report honestly what still fails.
    - Without a way to run it (e.g. the Claude app's Chat mode): do a

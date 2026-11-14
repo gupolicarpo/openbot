@@ -6,7 +6,8 @@ import yaml from './yaml.mjs';
 export const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const KINDS = ['task', 'chat', 'scheduled', 'api'];
 export const MEMORY = ['none', 'session', 'history'];
-export const MODELS = ['inherit', 'haiku', 'sonnet', 'opus'];
+export const MODELS = ['inherit', 'haiku', 'sonnet', 'opus', 'fable'];
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const CAPABILITIES = ['explore', 'plan', 'general'];
 const VERIFIABLE = ['task', 'chat'];
 
@@ -105,6 +106,7 @@ export function validate(doc) {
       if (doc.execution.mode !== undefined && !KINDS.includes(doc.execution.mode)) err('execution.mode', `must be one of ${KINDS.join('|')}`);
       if (doc.execution.memory !== undefined && !MEMORY.includes(doc.execution.memory)) err('execution.memory', `must be one of ${MEMORY.join('|')}`);
       if (doc.execution.model !== undefined && !MODELS.includes(doc.execution.model)) err('execution.model', `must be one of ${MODELS.join('|')}`);
+      if (doc.execution.effort !== undefined && !EFFORTS.includes(doc.execution.effort)) err('execution.effort', `must be one of ${EFFORTS.join('|')}`);
     }
   }
   return { errors, warnings };
@@ -132,6 +134,7 @@ export function toClaudeAgent(doc, manifestPath) {
     + `Delegate to it for its own tasks (${uses}); give it the task id and inputs.`;
   const fm = { name: agentName(doc.name), description, tools: claudeTools(doc).join(', ') };
   if (doc.execution?.model && doc.execution.model !== 'inherit') fm.model = doc.execution.model;
+  if (doc.execution?.effort) fm.effort = doc.execution.effort;
 
   const L = [];
   L.push(`<!-- Generated from ${manifestPath} by tools/export-agents-openbot.mjs. Do not edit: change the manifest and re-export. -->`);

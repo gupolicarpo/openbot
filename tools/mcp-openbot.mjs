@@ -122,7 +122,7 @@ const MANIFEST_SPEC = [
   'persona: { role (required), tone, constraints: [what it must never do] }, instructions: [standing rules, >=1],',
   'requires: [capabilities it needs], tools: { harness: [read|grep|glob|write|edit|bash|web_search|web_fetch], mcp: [...] } (omit = read-only),',
   'tasks: [{ id, kind: task|chat|scheduled|api, prompt, inputs: {...}, output: <file>, acceptance: [checkable criteria], test: { inputs: {...} | message: "...", expect: "..." } }],',
-  'execution: { model: inherit|haiku|sonnet|opus, memory: none|session|history }.',
+  'execution: { model: haiku|sonnet|opus|fable (or inherit), effort: low|medium|high|xhigh|max, memory: none|session|history }.',
   '(scheduled needs schedule: "<cron>", api needs route: "/path"). A bot you talk to needs a kind: chat task whose prompt is its standing behavior. Every task/chat task needs acceptance and test.',
 ];
 const OPEN_SESSION = [
@@ -159,14 +159,15 @@ function getPrompt(name, args = {}) {
       ...INTERVIEW_RULES,
       'PHASE 2 - TECHNICAL CHECK (you answer HOW, with evidence = something you can point at, e.g. a tool, skill or MCP server you actually have; not your own assurance). Keep it short for simple bots:',
       '- capabilities the bot needs (requires); for each, what in this environment provides it, by name; nothing provides it = a gap;',
-      '- the simplest tools (read-only unless it must write) and model (haiku for simple text work);',
+      '- the simplest tools (read-only unless it must write);',
+      '- model + effort: YOU decide the cheapest pair you expect to meet the acceptance criteria, and always set both. Models (API $ in/out per 1M tokens, Nov 2026): haiku $0.10/$0.50 for well-defined text work (summarize, extract, classify, simple FAQ chat); sonnet $2/$10 for judgment or several steps (code review, web research, multi-step tool use); opus $4/$20 for hard reasoning, long agentic work or costly mistakes; fable $8/$40 only if I ask or opus at high already failed. Effort: low for short answers, chat and high-volume tasks; medium by default; high when correctness matters more than speed; xhigh/max only after a lower level failed. Go cheaper when it runs often (scheduled, api, busy chat), higher when an error is expensive; lower effort before a bigger model. Give one line of reasons;',
       '- one test per task/chat task (sample inputs or message + what a good answer must show);',
       '- risks: writes files, network, cost, credentials.',
       'Resolve purely technical gaps yourself; bring me only decisions that are mine, as specific questions. Never invent an integration that does not exist.',
-      'Then show a compact summary (not raw YAML): what it does, acceptance criteria, how it works, gaps and how they were resolved, the test, risks. Ask "Posso criar?" and wait.',
+      'Then show a compact summary (not raw YAML): what it does, acceptance criteria, how it works (tools, model + effort with the one-line reason; I can change them), gaps and how they were resolved, the test, risks. Ask "Posso criar?" and wait.',
       ...MANIFEST_SPEC,
       'After my explicit yes: call openbot_save with the full YAML manifest and approved: true (it validates and exports the bot as a Claude Code subagent). Fix every error and every acceptance/test warning, and save again.',
-      'PHASE 3 - VERIFICATION: run each test in a clean context. If you have subagents (Claude Code Agent tool), delegate to openbot-<name>, or if that type is not loaded yet, to a general-purpose subagent given the bot definition from openbot_get plus the test inputs. Judge the result against each acceptance criterion and the expect (quote the output as evidence, pass/fail per criterion). On failure: fix the bot and re-run (max 3 attempts), or come back to me if the requirement itself was wrong. If you cannot run anything here (e.g. Chat mode), do a rehearsal and say clearly it is a rehearsal, not a real run.',
+      'PHASE 3 - VERIFICATION: run each test in a clean context. If you have subagents (Claude Code Agent tool), delegate to openbot-<name>, or if that type is not loaded yet, to a general-purpose subagent given the bot definition from openbot_get plus the test inputs. Judge the result against each acceptance criterion and the expect (quote the output as evidence, pass/fail per criterion). On failure: fix the bot and re-run (max 3 attempts); if the instructions are right but the model could not do the work, go up one level (effort first, then model) unless I chose them myself; come back to me if the requirement itself was wrong. If you cannot run anything here (e.g. Chat mode), do a rehearsal and say clearly it is a rehearsal, not a real run.',
       'Report: path, subagent, test result per criterion, anything still open.',
       ...OPEN_SESSION,
     ].join('\n'));

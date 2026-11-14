@@ -111,7 +111,7 @@ Then follow [references/authoring.md](references/authoring.md), which has
 three phases: **1. Interview** (the user says *what*, including how to tell a
 good result: `acceptance`); **2. Technical check** (you answer *how*, with
 evidence: what the bot `requires`, what in this environment provides it,
-gaps, the simplest tools/model, a `test` case, risks); then the summary and
+gaps, the simplest tools, the most cost-effective model + effort, a `test` case, risks); then the summary and
 "Posso criar?"; after the yes, write + validate + export the subagent, and
 **3. Verification** (run the test in a clean context, judge it against the
 acceptance criteria, fix and re-run up to 3 times). Finally open a dedicated

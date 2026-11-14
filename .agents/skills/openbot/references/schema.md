@@ -29,7 +29,8 @@ Compact reference for the runner. A manifest is a YAML (or JSON) object.
 | `tasks[].route` | string | no (required for api) |
 | `execution.mode` | task\|chat\|scheduled\|api | no (default `task`) |
 | `execution.memory` | none\|session\|history | no (default `none`) |
-| `execution.model` | inherit\|haiku\|sonnet\|opus | no (default `inherit`; used by the exported subagent) |
+| `execution.model` | inherit\|haiku\|sonnet\|opus\|fable | no (default `inherit`; used by the exported subagent; new bots set it, see authoring.md) |
+| `execution.effort` | low\|medium\|high\|xhigh\|max | no (default: the caller's effort; used by the exported subagent) |
 | `capabilities` | explore\|plan\|general | no (shorthand for `tools.harness`) |
 
 ## Validation rules
