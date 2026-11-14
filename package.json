@@ -1,0 +1,14 @@
+{
+  "name": "openbot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": "./tools/lib/manifest.mjs",
+    "./paths": "./tools/lib/paths.mjs",
+    "./yaml": "./tools/vendor/js-yaml.mjs"
+  },
+  "scripts": {
+    "validate": "node tools/validate-all.mjs"
+  }
+}

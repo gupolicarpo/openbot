@@ -34,7 +34,7 @@ file (JSON is also accepted) and executed by a runner inside an AI harness
 | `execution` | object | no | Default execution mode. |
 | `execution.mode` | enum | no | `task` (default) \| `chat` \| `scheduled` \| `api`. |
 | `execution.memory` | enum | no | `none` (default) \| `session` \| `history`. |
-| `execution.model` | enum | no | `inherit` (default) \| `haiku` \| `sonnet` \| `opus` \| `fable` — model of the exported Claude Code subagent. Chosen during authoring as the cheapest model expected to meet the acceptance criteria. |
+| `execution.model` | string | no | A Claude Code alias (`inherit` (default) \| `haiku` \| `sonnet` \| `opus` \| `fable`) or any provider's model id (no whitespace); non-Claude ids are ignored by the Claude Code export. Model of the exported Claude Code subagent. Chosen during authoring as the cheapest model expected to meet the acceptance criteria. |
 | `execution.effort` | enum | no | `low` \| `medium` \| `high` \| `xhigh` \| `max` — reasoning effort of the exported subagent (omitted = the caller's). Chosen together with `model`. |
 | `capabilities` | enum | no | `explore` \| `plan` \| `general` — shorthand for `tools.harness`. |
 

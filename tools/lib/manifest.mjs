@@ -105,7 +105,7 @@ export function validate(doc) {
     else {
       if (doc.execution.mode !== undefined && !KINDS.includes(doc.execution.mode)) err('execution.mode', `must be one of ${KINDS.join('|')}`);
       if (doc.execution.memory !== undefined && !MEMORY.includes(doc.execution.memory)) err('execution.memory', `must be one of ${MEMORY.join('|')}`);
-      if (doc.execution.model !== undefined && !MODELS.includes(doc.execution.model)) err('execution.model', `must be one of ${MODELS.join('|')}`);
+      if (doc.execution.model !== undefined && !MODELS.includes(doc.execution.model) && !(typeof doc.execution.model === 'string' && /^\S+$/.test(doc.execution.model))) err('execution.model', `must be one of ${MODELS.join('|')} or a model id (non-empty, no whitespace)`);
       if (doc.execution.effort !== undefined && !EFFORTS.includes(doc.execution.effort)) err('execution.effort', `must be one of ${EFFORTS.join('|')}`);
     }
   }
@@ -133,7 +133,7 @@ export function toClaudeAgent(doc, manifestPath) {
   const description = `${icon} OpenBot bot "${doc.name}" (v${doc.version}): ${doc.description ?? doc.persona.role}. `
     + `Delegate to it for its own tasks (${uses}); give it the task id and inputs.`;
   const fm = { name: agentName(doc.name), description, tools: claudeTools(doc).join(', ') };
-  if (doc.execution?.model && doc.execution.model !== 'inherit') fm.model = doc.execution.model;
+  if (doc.execution?.model && doc.execution.model !== 'inherit' && MODELS.includes(doc.execution.model)) fm.model = doc.execution.model;
   if (doc.execution?.effort) fm.effort = doc.execution.effort;
 
   const L = [];
