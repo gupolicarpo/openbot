@@ -25,3 +25,5 @@ tasks:
 execution:
   mode: scheduled
   memory: none
+  model: haiku
+  effort: low

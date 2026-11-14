@@ -40,3 +40,5 @@ tasks:
 execution:
   mode: task
   memory: none
+  model: sonnet
+  effort: high

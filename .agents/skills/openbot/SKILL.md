@@ -64,7 +64,8 @@ project's `.claude/agents/` for examples; generated from the manifest).
    - delegate to subagent type `openbot-<name>`, passing **only** the task id
      and its inputs (never this conversation's context). If that type is not
      loaded yet (created in this session), spawn a general-purpose subagent
-     with the body of `.claude/agents/openbot-<name>.md` + task id + inputs;
+     with the body of the exported `openbot-<name>.md` (`~/.claude/agents/` for
+     personal bots, the project's `.claude/agents/` for examples) + task id + inputs;
    - if the subagent could not write `task.output` (read-only bot), save the
      result it returned to that path yourself.
    In a **pipeline**, every step is its own subagent call; pass a step only the
@@ -95,7 +96,8 @@ project's `.claude/agents/` for examples; generated from the manifest).
    the `<icon> **<name>:**` prefix on every reply as the bot.
 3. **Converse**: hold a multi-turn conversation in the user's language. Greet
    as the persona, stay in role, honor `persona.constraints`, and keep the
-   session in memory (no cross-session persistence in MVP).
+   session in memory. Persist across sessions only when `execution.memory` is
+   `history`.
 4. **Record** when the session ends: append a run line with
    `status:"completed"` and `result:"<chat session>"`.
 5. **Report** briefly as the runner.
@@ -163,5 +165,5 @@ Do not reimplement subagents — reuse the harness's own mechanism.
 - Produce task output in the language the task specifies (default: the user's
   language).
 - If a manifest is missing required fields, stop and report instead of assuming
-  values (FR-7).
+  values.
 - One run at a time; do not run other bots or tasks unless asked.

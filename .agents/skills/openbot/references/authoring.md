@@ -114,7 +114,8 @@ After an explicit yes:
    - Claude Code: delegate with the Agent tool to `openbot-<name>`. A subagent
      file created in this session may only load in the next one; if that type
      is not available yet, spawn a general-purpose subagent and give it the
-     body of `.claude/agents/openbot-<name>.md` plus the test inputs.
+     body of the exported `openbot-<name>.md` (`~/.claude/agents/` for personal
+     bots) plus the test inputs.
    - Judge the result yourself against each `acceptance` item and the test's
      `expect`, quoting the output as evidence (✅/❌ per criterion).
    - **Fail?** Diagnose. If the bot definition is wrong (unclear prompt,
@@ -159,4 +160,5 @@ After an explicit yes:
 - `persona.role`, `instructions`, `tasks` present and non-empty.
 - Every task/chat task has `acceptance` and `test`, and its test passed (or
   the report says plainly why not).
-- `.claude/agents/openbot-<name>.md` exported and up to date.
+- `openbot-<name>.md` exported and up to date (`~/.claude/agents/` for
+  personal bots).

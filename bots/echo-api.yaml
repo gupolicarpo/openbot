@@ -17,3 +17,5 @@ tasks:
 execution:
   mode: api
   memory: none
+  model: haiku
+  effort: low

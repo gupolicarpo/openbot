@@ -2,6 +2,8 @@
 name: openbot-daily-digest
 description: '📰 OpenBot bot "daily-digest" (v0.2): Generates a daily summary of executed bots. Delegate to it for its own tasks (digest); give it the task id and inputs.'
 tools: Read, Glob
+model: haiku
+effort: low
 ---
 
 <!-- Generated from bots/daily-digest.yaml by tools/export-agents-openbot.mjs. Do not edit: change the manifest and re-export. -->

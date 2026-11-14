@@ -2,6 +2,8 @@
 name: openbot-code-reviewer
 description: '🔍 OpenBot bot "code-reviewer" (v0.4): Reviews code/diffs with a focus on bugs, security and readability. Delegate to it for its own tasks (review-diff); give it the task id and inputs.'
 tools: Read, Grep, Glob
+model: sonnet
+effort: high
 ---
 
 <!-- Generated from bots/code-reviewer.yaml by tools/export-agents-openbot.mjs. Do not edit: change the manifest and re-export. -->

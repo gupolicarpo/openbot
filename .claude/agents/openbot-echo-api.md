@@ -2,6 +2,8 @@
 name: openbot-echo-api
 description: '📡 OpenBot bot "echo-api" (v0.1): Echoes input via an HTTP endpoint. Delegate to it for its own tasks (echo); give it the task id and inputs.'
 tools: Read, Grep, Glob
+model: haiku
+effort: low
 ---
 
 <!-- Generated from bots/echo-api.yaml by tools/export-agents-openbot.mjs. Do not edit: change the manifest and re-export. -->
