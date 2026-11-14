@@ -26,11 +26,15 @@ file (JSON is also accepted) and executed by a runner inside an AI harness
 | `tasks[].prompt` | string | yes | The task / behavior to run. |
 | `tasks[].inputs` | object | no | Inputs (key → value). |
 | `tasks[].output` | string | no | Output artifact path (task/scheduled/api). |
+| `tasks[].acceptance` | string \| list | no* | Checkable criteria for a good result. Used by the verification phase and by every run to report ✅/❌ per criterion. *Validator warns when a `task`/`chat` task has none. |
+| `tasks[].test` | object | no* | Sample run: `inputs` (task) or `message` (chat), plus `expect` (what a good answer must show). *Warned when missing on `task`/`chat`. |
+| `requires` | list | no | Capabilities the bot needs from the environment (e.g. "read files", "YouTube transcript"). Checked against what is really available in the technical phase; shown to the subagent, which stops if one is missing. |
 | `tasks[].schedule` | string | no | Cron or interval (`every 1h`); required for `scheduled`. |
 | `tasks[].route` | string | no | HTTP path (e.g. `/echo`); required for `api`. |
 | `execution` | object | no | Default execution mode. |
 | `execution.mode` | enum | no | `task` (default) \| `chat` \| `scheduled` \| `api`. |
 | `execution.memory` | enum | no | `none` (default) \| `session` \| `history`. |
+| `execution.model` | enum | no | `inherit` (default) \| `haiku` \| `sonnet` \| `opus` — model of the exported Claude Code subagent. |
 | `capabilities` | enum | no | `explore` \| `plan` \| `general` — shorthand for `tools.harness`. |
 
 ## Validation rules (FR-7)
@@ -48,6 +52,18 @@ The runner must **reject and report** (field + reason), never guess:
 9. `kind: api` without `tasks[].route` → **error**.
 10. `capabilities` outside `explore|plan|general` → **error**.
 11. unknown name in `tools.harness` → **warning** (non-blocking).
+
+## Bots as Claude Code subagents
+
+`node tools/export-agents-openbot.mjs` compiles every valid bot into
+`.claude/agents/openbot-<name>.md`: a subagent with the bot's identity,
+constraints, instructions, tasks, acceptance criteria, its own tools
+(`tools.harness` mapped to Claude Code tools; read-only if omitted) and model.
+The manifest stays the source of truth — never edit the generated files; CI
+runs `--check` to catch stale ones. In Claude Code, running a task delegates
+to that subagent, so the bot works in a **clean context**, not influenced by
+the conversation that called it. Talking to a bot (chat) happens in its own
+session instead.
 
 ## Execution modes
 

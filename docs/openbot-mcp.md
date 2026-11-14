@@ -6,11 +6,12 @@ tools, usable by any agent with an MCP client — DSH, Claude Code, Codex/ChatGP
 ## Tools
 - `openbot_list` · `openbot_validate` · `openbot_run` · `openbot_memory` ·
   `openbot_orchestrate` · `openbot_pack`
+- `openbot_export` — compile bots into Claude Code subagents (`.claude/agents/openbot-<name>.md`).
 - `openbot_get` — a bot's icon, how to act as it, and its full manifest.
 - `openbot_save` — validate + write `bots/<name>.yaml`; refuses unless `approved: true`
   (set only after the user approved the summary) and refuses to overwrite unless
   `overwrite: true`. This is what lets clients **without file access** (the Claude app's
-  Chat mode) create and edit bots.
+  Chat mode) create and edit bots. It also re-exports the bot's subagent.
 
 ## Prompts (slash commands)
 - `new-bot` (optional `idea`) — guided interview to create a bot; in Claude Code: `/mcp__openbot__new-bot`.

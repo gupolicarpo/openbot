@@ -2,7 +2,7 @@
 // mcp-openbot.mjs — OpenBot as a dependency-free MCP server (stdio, JSON-RPC).
 // Prompts: new-bot, edit-bot, chat-with-bot.
 // Exposes: openbot_list, openbot_validate, openbot_run, openbot_memory,
-//          openbot_orchestrate, openbot_pack, openbot_get, openbot_save.
+//          openbot_orchestrate, openbot_pack, openbot_get, openbot_save, openbot_export.
 // Connect with any MCP client (DSH / Claude Code / Codex):
 //   command: node tools/mcp-openbot.mjs
 // Protocol version: 2024-11-05 (content[] / isError).
@@ -12,6 +12,8 @@ import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
 import yaml from './lib/yaml.mjs';
+import { validate } from './lib/manifest.mjs';
+import { exportAgents } from './export-agents-openbot.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -22,10 +24,6 @@ const BOTS = join(ROOT, 'bots');
 // arguments (sample/pipeline.yaml, bots/x.yaml, pack inputs) always resolve.
 process.chdir(ROOT);
 
-const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const KINDS = ['task', 'chat', 'scheduled', 'api'];
-const MEMORY = ['none', 'session', 'history'];
-
 function resolveBot(arg) {
   return /\.ya?ml$/i.test(String(arg)) ? resolve(String(arg)) : join(BOTS, `${arg}.yaml`);
 }
@@ -33,47 +31,8 @@ function loadBot(arg) {
   return yaml.load(readFileSync(resolveBot(arg), 'utf8'));
 }
 
-function iconError(icon) {
-  if (icon === undefined) return null;
-  if (typeof icon !== 'string') return 'must be a string (one emoji)';
-  const n = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(icon)].length;
-  return n === 1 && !/s/.test(icon) ? null : `"${icon}" must be exactly one emoji/character`;
-}
 const ico = (d) => d?.icon ?? '🤖';
 
-function validate(doc) {
-  const errors = [];
-  const warnings = [];
-  if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) {
-    return { errors: [{ field: '(root)', reason: 'must be a YAML/JSON object' }], warnings: [] };
-  }
-  if (typeof doc.name !== 'string' || !doc.name) errors.push({ field: 'name', reason: 'required string' });
-  else if (!NAME_RE.test(doc.name)) errors.push({ field: 'name', reason: `"${doc.name}" is not kebab-case` });
-  if (typeof doc.version !== 'string' || !doc.version) errors.push({ field: 'version', reason: 'required string' });
-  const iconErr = iconError(doc.icon);
-  if (iconErr) errors.push({ field: 'icon', reason: iconErr });
-  if (typeof doc.persona !== 'object' || doc.persona === null) errors.push({ field: 'persona', reason: 'required object' });
-  else if (typeof doc.persona.role !== 'string' || !doc.persona.role) errors.push({ field: 'persona.role', reason: 'required non-empty string' });
-  if (!Array.isArray(doc.instructions) || doc.instructions.length === 0) errors.push({ field: 'instructions', reason: 'required non-empty list' });
-  if (!Array.isArray(doc.tasks) || doc.tasks.length === 0) {
-    errors.push({ field: 'tasks', reason: 'required non-empty list' });
-  } else {
-    const seen = new Set();
-    doc.tasks.forEach((t, i) => {
-      const p = `tasks[${i}]`;
-      if (typeof t !== 'object' || t === null) { errors.push({ field: p, reason: 'must be an object' }); return; }
-      if (typeof t.id !== 'string' || !t.id) errors.push({ field: `${p}.id`, reason: 'required' });
-      else if (seen.has(t.id)) errors.push({ field: `${p}.id`, reason: `duplicate "${t.id}"` });
-      else seen.add(t.id);
-      if (!KINDS.includes(t.kind)) errors.push({ field: `${p}.kind`, reason: `must be one of ${KINDS.join('|')}` });
-      if (typeof t.prompt !== 'string' || !t.prompt) errors.push({ field: `${p}.prompt`, reason: 'required' });
-      if (t.kind === 'scheduled' && (typeof t.schedule !== 'string' || !t.schedule)) errors.push({ field: `${p}.schedule`, reason: 'required for scheduled' });
-      if (t.kind === 'api' && (typeof t.route !== 'string' || !t.route)) errors.push({ field: `${p}.route`, reason: 'required for api' });
-    });
-  }
-  if (doc.execution?.memory !== undefined && !MEMORY.includes(doc.execution.memory)) errors.push({ field: 'execution.memory', reason: `must be one of ${MEMORY.join('|')}` });
-  return { errors, warnings };
-}
 
 function listBots() {
   const files = readdirSync(BOTS).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml')).sort();
@@ -161,8 +120,10 @@ const INTERVIEW_RULES = [
 const MANIFEST_SPEC = [
   'Manifest fields (YAML): name (kebab-case, unique), icon (exactly one emoji), version ("0.1" for new bots), description (one line),',
   'persona: { role (required), tone, constraints: [what it must never do] }, instructions: [standing rules, >=1],',
-  'tools: { harness: [...] } (omit = read-only), tasks: [{ id, kind: task|chat|scheduled|api, prompt, inputs: {...}, output: <file> }]',
-  '(scheduled needs schedule: "<cron>", api needs route: "/path"). A bot you talk to needs a kind: chat task whose prompt is its standing behavior.',
+  'requires: [capabilities it needs], tools: { harness: [read|grep|glob|write|edit|bash|web_search|web_fetch], mcp: [...] } (omit = read-only),',
+  'tasks: [{ id, kind: task|chat|scheduled|api, prompt, inputs: {...}, output: <file>, acceptance: [checkable criteria], test: { inputs: {...} | message: "...", expect: "..." } }],',
+  'execution: { model: inherit|haiku|sonnet|opus, memory: none|session|history }.',
+  '(scheduled needs schedule: "<cron>", api needs route: "/path"). A bot you talk to needs a kind: chat task whose prompt is its standing behavior. Every task/chat task needs acceptance and test.',
 ];
 const OPEN_SESSION = [
   "Then open the bot's own conversation:",
@@ -189,16 +150,24 @@ function getPrompt(name, args = {}) {
     const idea = args.idea ? 'My idea: "' + args.idea + '".' : 'Start by asking me what the bot should do.';
     return msg('Guided creation of a new bot', [
       'I want to create a new OpenBot bot. ' + idea,
-      'Run this interview, in order:',
-      '0. Restate my idea in one line and say you will ask a few questions before creating anything.',
+      'Work in three phases. 0. First restate my idea in one line and say you will ask a few questions before creating anything.',
+      'PHASE 1 - INTERVIEW (I answer WHAT):',
       '1. Name (check it is free with openbot_list), role/persona, and one emoji icon.',
       '2. Tone, constraints (what it must never do) and standing instructions.',
-      '3. Tools (default: read-only).',
-      '4. Main task(s): prompt, inputs, output file, kind. Include a kind: chat task so I can talk to it.',
-      '5. Show a compact summary (not raw YAML) and ask "Posso criar?".',
+      '3. Main task(s): what goes in, what comes out, kind. Include a kind: chat task if I want to talk to it.',
+      '4. How will I know the result is good? Propose 2-4 checkable acceptance criteria.',
       ...INTERVIEW_RULES,
+      'PHASE 2 - TECHNICAL CHECK (you answer HOW, with evidence = something you can point at, e.g. a tool, skill or MCP server you actually have; not your own assurance). Keep it short for simple bots:',
+      '- capabilities the bot needs (requires); for each, what in this environment provides it, by name; nothing provides it = a gap;',
+      '- the simplest tools (read-only unless it must write) and model (haiku for simple text work);',
+      '- one test per task/chat task (sample inputs or message + what a good answer must show);',
+      '- risks: writes files, network, cost, credentials.',
+      'Resolve purely technical gaps yourself; bring me only decisions that are mine, as specific questions. Never invent an integration that does not exist.',
+      'Then show a compact summary (not raw YAML): what it does, acceptance criteria, how it works, gaps and how they were resolved, the test, risks. Ask "Posso criar?" and wait.',
       ...MANIFEST_SPEC,
-      'After my explicit yes: call openbot_save with the full YAML manifest and approved: true. If it reports errors, fix them and save again. Report the path.',
+      'After my explicit yes: call openbot_save with the full YAML manifest and approved: true (it validates and exports the bot as a Claude Code subagent). Fix every error and every acceptance/test warning, and save again.',
+      'PHASE 3 - VERIFICATION: run each test in a clean context. If you have subagents (Claude Code Agent tool), delegate to openbot-<name>, or if that type is not loaded yet, to a general-purpose subagent given the bot definition from openbot_get plus the test inputs. Judge the result against each acceptance criterion and the expect (quote the output as evidence, pass/fail per criterion). On failure: fix the bot and re-run (max 3 attempts), or come back to me if the requirement itself was wrong. If you cannot run anything here (e.g. Chat mode), do a rehearsal and say clearly it is a rehearsal, not a real run.',
+      'Report: path, subagent, test result per criterion, anything still open.',
       ...OPEN_SESSION,
     ].join('\n'));
   }
@@ -235,7 +204,9 @@ function saveBot({ manifest, approved, overwrite }) {
   const path = join(BOTS, d.name + '.yaml');
   if (existsSync(path) && overwrite !== true) throw new Error('bots/' + d.name + '.yaml already exists; pick another name, or pass overwrite=true when editing it');
   writeFileSync(path, manifest.replace(/^﻿/, '').trimEnd() + '\n', 'utf8');
-  return '✅ saved ' + (d.icon ?? '🤖') + ' ' + d.name + ' (v' + d.version + ') → ' + path;
+  const exp = exportAgents({ bots: [d.name] }).text;
+  const warn = validate(d).warnings.map((w) => '\n  ⚠ ' + w.field + ': ' + w.reason).join('');
+  return '✅ saved ' + (d.icon ?? '🤖') + ' ' + d.name + ' (v' + d.version + ') → ' + path + warn + '\nsubagent: ' + exp;
 }
 
 const TOOLS = [
@@ -246,6 +217,7 @@ const TOOLS = [
   { name: 'openbot_orchestrate', description: 'Print the ordered multi-bot plan for a pipeline.yaml.', inputSchema: { type: 'object', properties: { pipeline: { type: 'string' } }, required: ['pipeline'] } },
   { name: 'openbot_get', description: 'Get a bot: its icon, how to act as it (persona, instructions, chat behavior) and its full manifest. Use it to talk as the bot or before editing it.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name or manifest path' } }, required: ['bot'] } },
   { name: 'openbot_save', description: 'Validate and write a bot manifest to bots/<name>.yaml. Only call after the user explicitly approved the bot summary (approved=true). Refuses to overwrite unless overwrite=true.', inputSchema: { type: 'object', properties: { manifest: { type: 'string', description: 'Full YAML manifest' }, approved: { type: 'boolean', description: 'true only if the user explicitly approved this bot' }, overwrite: { type: 'boolean', description: 'true to replace an existing bot (edit flow)' } }, required: ['manifest', 'approved'] } },
+  { name: 'openbot_export', description: 'Compile bots into Claude Code subagents (.claude/agents/openbot-<name>.md) so each runs in its own clean context. Omit bot to export all.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name (optional)' } } } },
   { name: 'openbot_pack', description: 'Bundle a bot (manifest + referenced inputs + README) into a shareable folder.', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, out: { type: 'string' } }, required: ['bot'] } },
 ];
 
@@ -254,9 +226,10 @@ function callTool(name, args) {
     case 'openbot_list': return listBots();
     case 'openbot_validate': {
       const d = loadBot(args.bot);
-      const { errors } = validate(d);
+      const { errors, warnings } = validate(d);
+      const warn = warnings.map((w) => `\n  ⚠ ${w.field}: ${w.reason}`).join('');
       if (errors.length) return `❌ ${ico(d)} ${args.bot}: ${errors.length} error(s)\n` + errors.map((e) => `  ${e.field}: ${e.reason}`).join('\n');
-      return `✅ ${ico(d)} ${args.bot}: valid (name=${d.name}, tasks=${(d.tasks ?? []).length})`;
+      return `✅ ${ico(d)} ${args.bot}: valid (name=${d.name}, tasks=${(d.tasks ?? []).length})` + warn;
     }
     case 'openbot_run': {
       const d = loadBot(args.bot);
@@ -267,6 +240,7 @@ function callTool(name, args) {
     case 'openbot_orchestrate': return orchestratePlan(args.pipeline);
     case 'openbot_get': return getBot(args.bot);
     case 'openbot_save': return saveBot(args);
+    case 'openbot_export': return exportAgents({ bots: args.bot ? [args.bot] : undefined }).text;
     case 'openbot_pack': return pack(args.bot, args.out);
     default: throw new Error(`unknown tool "${name}"`);
   }

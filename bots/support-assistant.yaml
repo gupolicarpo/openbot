@@ -1,6 +1,6 @@
 name: support-assistant
 icon: "💬"
-version: "0.1"
+version: "0.2"
 description: "Support assistant that answers questions in a friendly way"
 persona:
   role: "Support assistant"
@@ -18,6 +18,15 @@ tasks:
   - id: support-chat
     kind: chat
     prompt: "Attend to the user as a support assistant"
+    acceptance:
+      - "Answers in simple language"
+      - "Asks back when context is missing"
+      - "Ends by asking if it helped"
+      - "Does not invent facts; says so when unsure"
+    test:
+      message: "Meu bot nao aparece na lista, o que eu faco?"
+      expect: "Asks which bot / where it was saved (missing context), gives a simple next step, ends by asking if it helped"
 execution:
   mode: chat
   memory: session
+  model: haiku

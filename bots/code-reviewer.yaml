@@ -1,6 +1,6 @@
 name: code-reviewer
 icon: "🔍"
-version: "0.3"
+version: "0.4"
 description: "Reviews code/diffs with a focus on bugs, security and readability"
 persona:
   role: "Senior code reviewer"
@@ -14,6 +14,8 @@ instructions:
   - "Report blocking issues first, then suggestions"
   - "Cite file and line (or hunk/snippet) in every finding"
   - "Distinguish fact (demonstrable bug) from opinion (style)"
+requires:
+  - "read the diff/code file given in inputs.code_path"
 tools:
   harness:
     - read
@@ -26,6 +28,15 @@ tasks:
     inputs:
       code_path: "./sample/change.patch"
     output: "sample/change-review-report.md"
+    acceptance:
+      - "Flags the SQL injection in fetch_user (f-string query) as blocking"
+      - "Flags the command injection in run_command (shell=True) as blocking"
+      - "Every finding cites file and line or hunk"
+      - "Blocking issues come before suggestions"
+    test:
+      inputs:
+        code_path: "./sample/change.patch"
+      expect: "Finds the SQL injection and the command injection as blocking, each with a line/hunk reference"
 execution:
   mode: task
   memory: none

@@ -3,7 +3,7 @@ name: openbot
 description: Create, edit, list, and run bots defined in an openbot.yaml manifest (persona + instructions + tools + tasks) inside this harness. Supports task (one-shot), chat (multi-turn conversation), scheduled (schedule plan + on-demand), and api (HTTP endpoint scaffold) modes, plus a guided author/edit flow that generates or updates manifests without the user writing YAML.
 whenToUse: Use when the user asks to run, chat with, list, create, or edit a bot ("roda o bot X", "conversa com o bot", "lista os bots", "cria/edita um bot"), names a bot under bots/, or points at a *.yaml manifest.
 metadata:
-  version: "3"
+  version: "4"
   kind: workflow
 ---
 
@@ -36,35 +36,46 @@ connected either, say so and stop: do not invent a bot.
 
 ## Mode: run (task)
 
-You load a bot from an `openbot.yaml` manifest and *become* that bot for the
-run, executing its task with this harness's own agent loop, model, and tools.
+A task runs in a **clean context**, so the bot is not influenced by this
+conversation. Each bot is compiled into a Claude Code subagent
+(`.claude/agents/openbot-<name>.md`, generated from the manifest).
 
 1. **Locate the manifest.** The user gives a path (e.g.
    `bots/code-reviewer.yaml`) or a bot name (look in `bots/<name>.yaml` in the
    workspace root; if not found, search `bots/**/<name>.yaml`). If you cannot
    resolve it, ask which bot or path.
 2. **Read and validate.** Parse and validate against
-   [references/schema.md](references/schema.md). If invalid, report field +
-   reason and stop (do not guess fields).
-3. **Become the bot.** Adopt `persona.role` (+ `persona.tone`,
-   `persona.constraints`) as your role and voice; follow `instructions`; use
-   only the tools in `tools.harness`/`tools.mcp`. If `tools` is omitted, use
-   only read-only tools.
-   **Show who is speaking:** take the bot's `icon` (one emoji; `🤖` if absent)
-   and start every message you write as the bot with `<icon> **<name>:**`
-   (e.g. `🔍 **code-reviewer:** …`). When you speak as the runner again
-   (validation errors, the final report), drop the prefix. In a pipeline,
-   each step uses its own bot's icon, so the user can tell the bots apart.
-   The prefix goes once at the start of each block of bot speech (not on every
-   paragraph); after a tool call or a runner line, the next bot block gets it
-   again. It is for the conversation only: never write it into `task.output`
-   files or `runs.jsonl`.
-4. **Execute the tasks.** Run each `kind: task` in `tasks` in order: do
-   `task.prompt` using `task.inputs`, write the result to `task.output` when
-   present.
-5. **Record the run.** Append one JSON line to `bots/<name>.runs.jsonl`.
-6. **Report.** Tell the user what you did, where the result is, and whether the
-   task's acceptance was satisfied. Keep the bot's voice inside the artifact.
+   [references/schema.md](references/schema.md) (or
+   `node tools/validate-openbot.mjs`). If invalid, report field + reason and
+   stop (do not guess fields).
+3. **Run it isolated (preferred).** If the harness has subagents (Claude Code:
+   the Agent tool):
+   - make sure the subagent is current: `node tools/export-agents-openbot.mjs
+     <name>` (cheap; it only rewrites when the manifest changed);
+   - delegate to subagent type `openbot-<name>`, passing **only** the task id
+     and its inputs (never this conversation's context). If that type is not
+     loaded yet (created in this session), spawn a general-purpose subagent
+     with the body of `.claude/agents/openbot-<name>.md` + task id + inputs;
+   - if the subagent could not write `task.output` (read-only bot), save the
+     result it returned to that path yourself.
+   In a **pipeline**, every step is its own subagent call; pass a step only the
+   previous step's output file/result it needs.
+4. **Fallback — become the bot** (harness without subagents). Adopt
+   `persona.role` (+ `tone`, `constraints`), follow `instructions`, use only
+   the tools in `tools.harness`/`tools.mcp` (read-only if omitted), and do
+   `task.prompt` with `task.inputs`, writing `task.output` when present.
+5. **Show who is speaking.** The bot's `icon` (one emoji; `🤖` if absent):
+   every block of bot speech starts with `<icon> **<name>:**` (e.g.
+   `🔍 **code-reviewer:** …`) — the subagent's report already starts with it;
+   keep it when you relay. Runner messages (validation errors, your own report)
+   have no prefix. Once per block, not per paragraph; after a tool call or a
+   runner line the next bot block gets it again. Conversation only: never write
+   it into `task.output` files or `runs.jsonl`.
+6. **Check acceptance.** For each `acceptance` item, ✅/❌ with one line of
+   evidence from the result. Do not claim a criterion you did not check.
+7. **Record the run.** Append one JSON line to `bots/<name>.runs.jsonl`
+   (`ts`, `task`, `status`, `acceptance`: passed/total, `output`).
+8. **Report.** What ran, where the result is, acceptance per criterion.
 
 ## Mode: chat
 
@@ -94,13 +105,17 @@ to *pre-fill recommended answers* — the user then confirms or changes them —
 but never skip asking. When the harness has a structured question tool
 (Claude Code: `AskUserQuestion`), use it for each batch; otherwise ask in
 plain text and stop your turn to wait for the answer. Writing the file before
-step 5 (summary approved) is a failure of this mode.
+the summary is approved is a failure of this mode.
 
-Then follow [references/authoring.md](references/authoring.md): interview in
-the user's language in batches, show the summary, and only after the user
-approves it write `bots/<name>.yaml`, validate, and report. Finally open a
-dedicated chat session with the new bot (step 7 of the create flow: in the
-Claude Code desktop app start it with the `start_session` tool, titled
+Then follow [references/authoring.md](references/authoring.md), which has
+three phases: **1. Interview** (the user says *what*, including how to tell a
+good result: `acceptance`); **2. Technical check** (you answer *how*, with
+evidence: what the bot `requires`, what in this environment provides it,
+gaps, the simplest tools/model, a `test` case, risks); then the summary and
+"Posso criar?"; after the yes, write + validate + export the subagent, and
+**3. Verification** (run the test in a clean context, judge it against the
+acceptance criteria, fix and re-run up to 3 times). Finally open a dedicated
+chat session with the new bot (desktop app: `start_session`, titled
 `<icon> <name>`; elsewhere give the command to open it).
 
 ## Scheduled & api (declared)

@@ -2,9 +2,9 @@ name: Validate OpenBot bots
 
 on:
   push:
-    paths: ["bots/**"]
+    paths: ["bots/**", ".claude/agents/**", "tools/**"]
   pull_request:
-    paths: ["bots/**"]
+    paths: ["bots/**", ".claude/agents/**", "tools/**"]
 
 jobs:
   validate:
@@ -16,3 +16,5 @@ jobs:
           node-version: 22
       - name: Validate bots
         run: node tools/validate-all.mjs
+      - name: Subagents up to date
+        run: node tools/export-agents-openbot.mjs --check

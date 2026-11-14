@@ -19,11 +19,12 @@ node tools/validate-all.mjs bots        # validate the bots
 node tools/list-openbot.mjs             # list the bots
 node tools/install-openbot.mjs claude codex   # install the skill into other harnesses
 node tools/mcp-openbot.mjs              # MCP server (native tools)
+node tools/export-agents-openbot.mjs    # bots -> Claude Code subagents (.claude/agents)
 ```
 
 ## Layout
 - `bots/*.yaml` — bot manifests.
-- `tools/` — scripts (validate, list, run, memory, orchestrate, schedule, serve, pack, install, mcp).
+- `tools/` — scripts (validate, list, run, memory, orchestrate, schedule, serve, pack, install, mcp, export-agents, zip-skill); `tools/lib/manifest.mjs` holds the shared schema rules.
 - `.agents/skills/openbot/` — the skill (runner + author/edit).
 - `docs/` — full documentation.
 

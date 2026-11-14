@@ -19,6 +19,9 @@ Compact reference for the runner. A manifest is a YAML (or JSON) object.
 | `tasks` | list<object> (≥1) | yes |
 | `tasks[].id` | string (unique) | yes |
 | `tasks[].kind` | task\|chat\|scheduled\|api | yes |
+| `tasks[].acceptance` | string or list<string> | warning if missing on task/chat |
+| `tasks[].test` | `{ inputs: {...} \| message: str, expect: str }` | warning if missing on task/chat |
+| `requires` | list<string> (capabilities it needs) | no |
 | `tasks[].prompt` | string | yes |
 | `tasks[].inputs` | object | no |
 | `tasks[].output` | string | no (task/scheduled/api) |
@@ -26,6 +29,7 @@ Compact reference for the runner. A manifest is a YAML (or JSON) object.
 | `tasks[].route` | string | no (required for api) |
 | `execution.mode` | task\|chat\|scheduled\|api | no (default `task`) |
 | `execution.memory` | none\|session\|history | no (default `none`) |
+| `execution.model` | inherit\|haiku\|sonnet\|opus | no (default `inherit`; used by the exported subagent) |
 | `capabilities` | explore\|plan\|general | no (shorthand for `tools.harness`) |
 
 ## Validation rules

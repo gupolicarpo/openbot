@@ -1,6 +1,6 @@
 name: summarizer
 icon: "📝"
-version: "0.1"
+version: "0.2"
 description: "Summarizes texts preserving the facts"
 persona:
   role: "Summary editor"
@@ -11,6 +11,8 @@ instructions:
   - "Summarize preserving the facts and original order"
   - "Highlight the top 3 points at the top"
   - "Cite the source when the text indicates one"
+requires:
+  - "read the text file given in inputs.source_path"
 tools:
   harness:
     - read
@@ -21,6 +23,16 @@ tasks:
     inputs:
       source_path: "./sample/article.txt"
     output: "sample/summary.md"
+    acceptance:
+      - "Top 3 points at the top"
+      - "No fact that is not in the source text"
+      - "Cites the source when the text names one"
+      - "Keeps the original order of the facts"
+    test:
+      inputs:
+        source_path: "./sample/article.txt"
+      expect: "Top 3 points about being specific, giving context and defining the expected answer format"
 execution:
   mode: task
   memory: none
+  model: haiku

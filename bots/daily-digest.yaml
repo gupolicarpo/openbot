@@ -1,6 +1,6 @@
 name: daily-digest
 icon: "📰"
-version: "0.1"
+version: "0.2"
 description: "Generates a daily summary of executed bots"
 persona:
   role: "Daily digest editor"
@@ -19,6 +19,9 @@ tasks:
     schedule: "0 9 * * *"
     prompt: "Summarize the day's runs in Markdown"
     output: "sample/daily-digest.md"
+    acceptance:
+      - "Lists only runs recorded in bots/*.runs.jsonl"
+      - "Says so plainly when there are no runs for the day"
 execution:
   mode: scheduled
   memory: none
