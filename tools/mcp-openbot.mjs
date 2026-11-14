@@ -7,17 +7,17 @@
 //   command: node tools/mcp-openbot.mjs
 // Protocol version: 2024-11-05 (content[] / isError).
 
-import { readFileSync, readdirSync, existsSync, appendFileSync, mkdirSync, rmSync, cpSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, appendFileSync, mkdirSync, rmSync, cpSync, writeFileSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import readline from 'node:readline';
 import yaml from './lib/yaml.mjs';
 import { validate } from './lib/manifest.mjs';
 import { exportAgents } from './export-agents-openbot.mjs';
+import { SCOPES, listBotFiles, findBot, displayPath } from './lib/paths.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const BOTS = join(ROOT, 'bots');
 
 // MCP clients launch the server from whatever folder they were started in.
 // Pin the working directory to the repo root so repo-relative paths in tool
@@ -25,7 +25,7 @@ const BOTS = join(ROOT, 'bots');
 process.chdir(ROOT);
 
 function resolveBot(arg) {
-  return /\.ya?ml$/i.test(String(arg)) ? resolve(String(arg)) : join(BOTS, `${arg}.yaml`);
+  return findBot(arg).path;
 }
 function loadBot(arg) {
   return yaml.load(readFileSync(resolveBot(arg), 'utf8'));
@@ -35,19 +35,21 @@ const ico = (d) => d?.icon ?? '🤖';
 
 
 function listBots() {
-  const files = readdirSync(BOTS).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml')).sort();
-  const rows = files.map((f) => {
-    try {
-      const d = yaml.load(readFileSync(join(BOTS, f), 'utf8'));
-      return `- ${ico(d)} ${d.name} (v${d.version}) — ${d.description ?? ''} [${(d.tasks ?? []).map((t) => t.kind).join(', ')}]`;
-    } catch (e) { return `- ⚠️ (invalid: ${f}) parse error`; }
-  });
-  return `Bots in ${BOTS}:\n${rows.join('\n')}`;
+  const section = (scope, title) => {
+    const rows = listBotFiles([scope]).map((b) => {
+      try {
+        const d = yaml.load(readFileSync(b.path, 'utf8'));
+        return `- ${ico(d)} ${d.name} (v${d.version}) — ${d.description ?? ''} [${(d.tasks ?? []).map((t) => t.kind).join(', ')}]`;
+      } catch (e) { return `- ⚠️ (invalid: ${b.name}) parse error`; }
+    });
+    return `${title} (${displayPath(SCOPES[scope].bots)}):\n${rows.join('\n') || '- (none)'}`;
+  };
+  return section('personal', 'Your bots') + '\n\n' + section('project', 'Example bots');
 }
 
 function buildInstruction(doc, task, inputs) {
   const ins = Object.entries(inputs ?? {}).map(([k, v]) => `${k}=${v}`).join(', ') || '(none)';
-  const instruction = `Use the openbot skill to run the bot ${ico(doc)} "${doc.name}" (manifest bots/${doc.name}.yaml), task "${task.id}", inputs: ${ins}. Execute it in the current directory and report the result.`;
+  const instruction = `Use the openbot skill to run the bot ${ico(doc)} "${doc.name}" (manifest ${displayPath(findBot(doc.name).path)}), task "${task.id}", inputs: ${ins}. Execute it in the current directory and report the result.`;
   const via = (process.env.OPENBOT_VIA ?? 'dsh');
   const q = (s) => `"${String(s).replace(/"/g, '\\"')}"`;
   const cmd = { dsh: `dsh headless ${q(instruction)}`, claude: `claude -p ${q(instruction)}`, codex: `codex exec ${q(instruction)}` }[via];
@@ -108,8 +110,8 @@ function pack(bot, out) {
 // self-contained (no skill needed) and only use this server's tools.
 const PROMPTS = [
   { name: 'new-bot', description: 'Create a new OpenBot bot through a guided interview (no YAML).', arguments: [{ name: 'idea', description: 'One line about what the bot should do (optional)', required: false }] },
-  { name: 'edit-bot', description: 'Edit an existing OpenBot bot through a short interview.', arguments: [{ name: 'bot', description: 'Bot name (as in bots/<name>.yaml)', required: true }] },
-  { name: 'chat-with-bot', description: 'Talk to an OpenBot bot: Claude takes on its persona for this conversation.', arguments: [{ name: 'bot', description: 'Bot name (as in bots/<name>.yaml)', required: true }] },
+  { name: 'edit-bot', description: 'Edit an existing OpenBot bot through a short interview.', arguments: [{ name: 'bot', description: 'Bot name (as listed by openbot_list)', required: true }] },
+  { name: 'chat-with-bot', description: 'Talk to an OpenBot bot: Claude takes on its persona for this conversation.', arguments: [{ name: 'bot', description: 'Bot name (as listed by openbot_list)', required: true }] },
 ];
 const FENCE = String.fromCharCode(96).repeat(3);
 const INTERVIEW_RULES = [
@@ -202,8 +204,11 @@ function saveBot({ manifest, approved, overwrite }) {
   const d = yaml.load(manifest);
   const { errors } = validate(d);
   if (errors.length) return '❌ not saved — ' + errors.length + ' error(s):\n' + errors.map((e) => '  ' + e.field + ': ' + e.reason).join('\n');
-  const path = join(BOTS, d.name + '.yaml');
-  if (existsSync(path) && overwrite !== true) throw new Error('bots/' + d.name + '.yaml already exists; pick another name, or pass overwrite=true when editing it');
+  // New bots are personal (never in the repo); an edit stays where the bot already is.
+  const existing = listBotFiles().find((b) => b.name === d.name);
+  if (existing && overwrite !== true) throw new Error(displayPath(existing.path) + ' already exists; pick another name, or pass overwrite=true when editing it');
+  const path = existing?.path ?? join(SCOPES.personal.bots, d.name + '.yaml');
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, manifest.replace(/^﻿/, '').trimEnd() + '\n', 'utf8');
   const exp = exportAgents({ bots: [d.name] }).text;
   const warn = validate(d).warnings.map((w) => '\n  ⚠ ' + w.field + ': ' + w.reason).join('');
@@ -211,14 +216,14 @@ function saveBot({ manifest, approved, overwrite }) {
 }
 
 const TOOLS = [
-  { name: 'openbot_list', description: 'List all bots in bots/ with name, version, description and task kinds.', inputSchema: { type: 'object', properties: {} } },
+  { name: 'openbot_list', description: 'List the personal bots of the user and the example bots of the project with name, version, description and task kinds.', inputSchema: { type: 'object', properties: {} } },
   { name: 'openbot_validate', description: 'Validate a bot manifest against schema v1.1 (field + reason errors).', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name or manifest path' } }, required: ['bot'] } },
   { name: 'openbot_run', description: 'Build the delegation instruction + command to run a bot via a harness CLI (dsh/claude/codex).', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, task: { type: 'string' }, inputs: { type: 'object' } }, required: ['bot'] } },
   { name: 'openbot_memory', description: 'Persistent memory: add / search / show entries for a bot.', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, op: { type: 'string', enum: ['add', 'search', 'show'] }, text: { type: 'string' } }, required: ['bot', 'op'] } },
   { name: 'openbot_orchestrate', description: 'Print the ordered multi-bot plan for a pipeline.yaml.', inputSchema: { type: 'object', properties: { pipeline: { type: 'string' } }, required: ['pipeline'] } },
   { name: 'openbot_get', description: 'Get a bot: its icon, how to act as it (persona, instructions, chat behavior) and its full manifest. Use it to talk as the bot or before editing it.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name or manifest path' } }, required: ['bot'] } },
-  { name: 'openbot_save', description: 'Validate and write a bot manifest to bots/<name>.yaml. Only call after the user explicitly approved the bot summary (approved=true). Refuses to overwrite unless overwrite=true.', inputSchema: { type: 'object', properties: { manifest: { type: 'string', description: 'Full YAML manifest' }, approved: { type: 'boolean', description: 'true only if the user explicitly approved this bot' }, overwrite: { type: 'boolean', description: 'true to replace an existing bot (edit flow)' } }, required: ['manifest', 'approved'] } },
-  { name: 'openbot_export', description: 'Compile bots into Claude Code subagents (.claude/agents/openbot-<name>.md) so each runs in its own clean context. Omit bot to export all.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name (optional)' } } } },
+  { name: 'openbot_save', description: 'Validate and write a bot manifest. New bots go to the personal folder of the user (~/.openbot/bots, never the repo); an edit stays where the bot is. Only call after the user explicitly approved the bot summary (approved=true). Refuses to overwrite unless overwrite=true.', inputSchema: { type: 'object', properties: { manifest: { type: 'string', description: 'Full YAML manifest' }, approved: { type: 'boolean', description: 'true only if the user explicitly approved this bot' }, overwrite: { type: 'boolean', description: 'true to replace an existing bot (edit flow)' } }, required: ['manifest', 'approved'] } },
+  { name: 'openbot_export', description: 'Compile bots into Claude Code subagents (openbot-<name>.md: personal bots → ~/.claude/agents, example bots → .claude/agents in the repo) so each runs in its own clean context. Omit bot to export all.', inputSchema: { type: 'object', properties: { bot: { type: 'string', description: 'Bot name (optional)' } } } },
   { name: 'openbot_pack', description: 'Bundle a bot (manifest + referenced inputs + README) into a shareable folder.', inputSchema: { type: 'object', properties: { bot: { type: 'string' }, out: { type: 'string' } }, required: ['bot'] } },
 ];
 

@@ -1,7 +1,7 @@
 ---
 name: openbot
 description: Create, edit, list, and run bots defined in an openbot.yaml manifest (persona + instructions + tools + tasks) inside this harness. Supports task (one-shot), chat (multi-turn conversation), scheduled (schedule plan + on-demand), and api (HTTP endpoint scaffold) modes, plus a guided author/edit flow that generates or updates manifests without the user writing YAML.
-whenToUse: Use when the user asks to run, chat with, list, create, or edit a bot ("roda o bot X", "conversa com o bot", "lista os bots", "cria/edita um bot"), names a bot under bots/, or points at a *.yaml manifest.
+whenToUse: Use when the user asks to run, chat with, list, create, or edit a bot ("roda o bot X", "conversa com o bot", "lista os bots", "cria/edita um bot"), names a bot, or points at a *.yaml manifest.
 metadata:
   version: "4"
   kind: workflow
@@ -13,7 +13,7 @@ You are the OpenBot runner and author. Modes:
 
 - **run** — execute a bot's task (`kind: task`), one shot.
 - **chat** — hold a multi-turn conversation as the bot (`kind: chat`).
-- **list** — list the bots in `bots/`.
+- **list** — list the bots (the user's own and the examples).
 - **author/edit** — create or edit a bot via a guided interview (no YAML).
 - **scheduled / api** — declared modes; run the task on demand, with reference
   scripts `tools/schedule-openbot.mjs` and `tools/serve-openbot.mjs`.
@@ -24,6 +24,13 @@ Choose the mode from the user's ask:
 - "conversa com o bot X" / "chat" → **chat**.
 - "lista os bots" → **list**.
 - "create/make/edit/define a bot" → **author/edit**.
+
+**Where bots live.** The user's bots are personal and never go into a
+repository: `~/.openbot/bots/<name>.yaml` (`~` = the user's home folder, e.g.
+`C:\Users\<user>` on Windows; `OPENBOT_HOME` overrides `~/.openbot`), exported
+to `~/.claude/agents/openbot-<name>.md`. The project's `bots/` folder holds only
+the example bots shipped with OpenBot. New bots are always personal; never
+commit a personal bot. The tools in `tools/` look in both places, personal first.
 
 **No file access?** (e.g. the Claude app's Chat mode.) Use the `openbot` MCP
 server instead of reading/writing files: `openbot_list` to list,
@@ -38,11 +45,13 @@ connected either, say so and stop: do not invent a bot.
 
 A task runs in a **clean context**, so the bot is not influenced by this
 conversation. Each bot is compiled into a Claude Code subagent
-(`.claude/agents/openbot-<name>.md`, generated from the manifest).
+(`openbot-<name>.md` in `~/.claude/agents/` for personal bots, in the
+project's `.claude/agents/` for examples; generated from the manifest).
 
 1. **Locate the manifest.** The user gives a path (e.g.
-   `bots/code-reviewer.yaml`) or a bot name (look in `bots/<name>.yaml` in the
-   workspace root; if not found, search `bots/**/<name>.yaml`). If you cannot
+   `bots/code-reviewer.yaml`) or a bot name (look in
+   `~/.openbot/bots/<name>.yaml`, then in the project's `bots/<name>.yaml`).
+   If you cannot
    resolve it, ask which bot or path.
 2. **Read and validate.** Parse and validate against
    [references/schema.md](references/schema.md) (or
@@ -73,7 +82,8 @@ conversation. Each bot is compiled into a Claude Code subagent
    it into `task.output` files or `runs.jsonl`.
 6. **Check acceptance.** For each `acceptance` item, ✅/❌ with one line of
    evidence from the result. Do not claim a criterion you did not check.
-7. **Record the run.** Append one JSON line to `bots/<name>.runs.jsonl`
+7. **Record the run.** Append one JSON line to `<name>.runs.jsonl`
+   next to the manifest
    (`ts`, `task`, `status`, `acceptance`: passed/total, `output`).
 8. **Report.** What ran, where the result is, acceptance per criterion.
 
@@ -92,13 +102,13 @@ conversation. Each bot is compiled into a Claude Code subagent
 
 ## Mode: list
 
-List every `bots/*.yaml` with icon, name, version, description, and task kinds.
+List every bot (personal, then examples) with icon, name, version, description, and task kinds.
 Prefer `node tools/list-openbot.mjs`; otherwise read the manifests directly.
 
 ## Mode: author/edit
 
 **Hard rule — interview first, write last.** Never create or change a
-`bots/*.yaml` file in the same turn as the request. Even when the request
+bot manifest in the same turn as the request. Even when the request
 already describes the bot in detail, you MUST first run the interview and get
 the user's explicit approval of the summary. Use what the request already says
 to *pre-fill recommended answers* — the user then confirms or changes them —

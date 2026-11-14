@@ -7,12 +7,13 @@ import { cp, mkdir, rm, readFile, readdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import yaml from './lib/yaml.mjs';
+import { findBot } from './lib/paths.mjs';
 
 const arg = process.argv[2];
 const outIdx = process.argv.indexOf('--out');
 const outRoot = resolve(outIdx >= 0 ? process.argv[outIdx + 1] : 'dist/packs');
 if (!arg) { console.error('usage: node tools/pack-openbot.mjs <bot> [--out <dir>]'); process.exit(2); }
-const botPath = /\.ya?ml$/i.test(arg) ? resolve(arg) : resolve('bots', `${arg}.yaml`);
+const botPath = findBot(arg).path;
 let bot;
 try { bot = yaml.load(await readFile(botPath, 'utf8')); } catch (e) { console.error(`❌ ${botPath}: ${e.message}`); process.exit(1); }
 

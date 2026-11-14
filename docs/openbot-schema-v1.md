@@ -120,4 +120,4 @@ execution:
 Reference runner: `.agents/skills/openbot/` (skill `openbot`).
 
 > `execution.memory`: `none` (default) | `session` (chat) | `history` (persisted
-> to `bots/<name>.memory.jsonl`, via `memory-openbot.mjs`).
+> to `<name>.memory.jsonl` next to the manifest, via `memory-openbot.mjs`).

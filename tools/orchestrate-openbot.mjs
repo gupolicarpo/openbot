@@ -6,6 +6,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import yaml from './lib/yaml.mjs';
+import { findBot } from './lib/paths.mjs';
 
 const arg = process.argv[2];
 if (!arg) { console.error('usage: node tools/orchestrate-openbot.mjs <pipeline.yaml|compose.yaml>'); process.exit(2); }
@@ -19,7 +20,7 @@ console.log(`Pipeline: ${pipe.name ?? '(unnamed)'} (${steps.length} steps)${isCo
 
 for (let i = 0; i < steps.length; i++) {
   const s = steps[i];
-  const botPath = /\.ya?ml$/i.test(s.bot) ? resolve(s.bot) : resolve('bots', `${s.bot}.yaml`);
+  const botPath = findBot(s.bot).path;
   let bot;
   try { bot = yaml.load(readFileSync(botPath, 'utf8')); } catch (e) { console.error(`  ❌ step ${i + 1}: bot "${s.bot}" not found`); process.exit(1); }
   const task = bot.tasks.find((t) => t.id === s.task) ?? bot.tasks[0];

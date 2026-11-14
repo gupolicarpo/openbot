@@ -23,7 +23,7 @@ node tools/export-agents-openbot.mjs    # bots -> Claude Code subagents (.claude
 ```
 
 ## Layout
-- `bots/*.yaml` — bot manifests.
+- `bots/*.yaml` — example bot manifests. Your own bots live outside the repo, in `~/.openbot/bots/` (exported to `~/.claude/agents/`).
 - `tools/` — scripts (validate, list, run, memory, orchestrate, schedule, serve, pack, install, mcp, export-agents, zip-skill); `tools/lib/manifest.mjs` holds the shared schema rules.
 - `.agents/skills/openbot/` — the skill (runner + author/edit).
 - `docs/` — full documentation.

@@ -11,7 +11,7 @@ phases with three different owners:
 | 3. Verification | Does what was built **actually meet** what the user wanted? | a test run, judged against the acceptance criteria |
 
 **Hard rule — interview first, write last.** Never create or change a
-`bots/*.yaml` file in the same turn as the request. Even when the request
+bot manifest in the same turn as the request. Even when the request
 already describes the bot in detail, you MUST first run the interview and get
 the user's explicit approval of the summary. Use what the request already says
 to *pre-fill recommended answers* — the user then confirms or changes them —
@@ -27,7 +27,7 @@ recommended answer.
 
 | # | Question (EN) | Field | Default / recommendation |
 |---|---|---|---|
-| 1 | What is the bot's name? | `name` | kebab-case, unique (check `bots/` or `openbot_list`) |
+| 1 | What is the bot's name? | `name` | kebab-case, unique (check `node tools/list-openbot.mjs` or `openbot_list`) |
 | 1b | Which emoji represents it? | `icon` | one that fits the role (exactly one emoji) |
 | 2 | What is its role/personality? | `persona.role` | — |
 | 3 | What is its tone of voice? | `persona.tone` | "direct, clear" |
@@ -98,13 +98,17 @@ user can change the model or effort before approving. Ask **"Posso criar?"**
 
 After an explicit yes:
 
-1. **Write + validate** — write `bots/<name>.yaml` (UTF-8, no BOM) or call
-   `openbot_save` with `approved: true`; run `node tools/validate-openbot.mjs
-   bots/<name>.yaml` (or `openbot_validate`). Fix every error. Treat the
+1. **Write + validate** — write `~/.openbot/bots/<name>.yaml` (UTF-8, no
+   BOM): the user's bots are personal and **never** go into the repository,
+   so do not write them to the project's `bots/` (that holds only the
+   examples) and never commit them. Or call `openbot_save` with
+   `approved: true`, which writes there. Run `node tools/validate-openbot.mjs
+   ~/.openbot/bots/<name>.yaml` (or `openbot_validate`). Fix every error. Treat the
    `acceptance`/`test` warnings as errors for task and chat tasks.
 2. **Export the subagent** — `node tools/export-agents-openbot.mjs <name>`
    (or `openbot_export`; `openbot_save` already does it). This creates
-   `.claude/agents/openbot-<name>.md`: the bot as a Claude Code subagent with
+   `~/.claude/agents/openbot-<name>.md` (the user's own subagents, available
+   in every project): the bot as a Claude Code subagent with
    its own clean context.
 3. **Phase 3 — Verification** — run each `test`, in a **clean context**:
    - Claude Code: delegate with the Agent tool to `openbot-<name>`. A subagent
@@ -133,8 +137,8 @@ After an explicit yes:
      listed as deferred): start a session with `initiation: "user_asked"`,
      `context: "fresh"`, `use_worktree: false` (same project folder),
      `title: "<icon> <name>"`, `name: "<name>"`, prompt
-     `Use the openbot skill in chat mode: you are the bot "<name>"
-     (bots/<name>.yaml). Greet me in role and wait for my first message.`,
+     `Use the openbot skill in chat mode: you are the bot "<name>".
+     Greet me in role and wait for my first message.`,
      and as background one line on what the bot does. Then link the session
      to the user (`[<icon> <name>](#<session id>)`).
    - **Any other harness** (no session tool): end by giving the exact command
@@ -143,7 +147,7 @@ After an explicit yes:
 
 ## Flow (edit)
 
-1. Read the current `bots/<name>.yaml`.
+1. Read the current manifest (personal first, then the examples in `bots/`).
 2. Summarize it to the user (1–2 lines).
 3. Ask **only** what changes; redo the Phase 2 check only for what changed.
 4. After approval: apply the delta, keep the rest, bump `version`,

@@ -8,9 +8,9 @@
 //        [--via dsh|claude|codex|openai|auto] [--dry-run]
 
 import { readFileSync, existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import yaml from './lib/yaml.mjs';
+import { findBot, displayPath } from './lib/paths.mjs';
 
 const args = process.argv.slice(2);
 const botArg = args[0];
@@ -28,14 +28,14 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (!botArg) { console.error('usage: node tools/run-openbot.mjs <bot> [--task <id>] [--input k=v ...] [--via dsh|claude|codex|openai|auto] [--dry-run]'); process.exit(2); }
-const path = /\.ya?ml$/i.test(botArg) ? resolve(botArg) : resolve('bots', `${botArg}.yaml`);
+const path = findBot(botArg).path;
 let doc;
 try { doc = yaml.load(readFileSync(path, 'utf8')); } catch (e) { console.error(`❌ ${path}: ${e.message}`); process.exit(1); }
 const task = doc.tasks.find((t) => !taskId || t.id === taskId) ?? doc.tasks[0];
 if (!task) { console.error('❌ no task'); process.exit(1); }
 
 const insText = Object.entries(inputs).map(([k, v]) => `${k}=${v}`).join(', ') || '(none)';
-const instruction = `Use the openbot skill to run the bot "${doc.name}" (manifest bots/${doc.name}.yaml), task "${task.id}", inputs: ${insText}. Execute it in the current directory and report the result.`;
+const instruction = `Use the openbot skill to run the bot "${doc.name}" (manifest ${displayPath(path)}), task "${task.id}", inputs: ${insText}. Execute it in the current directory and report the result.`;
 
 const system = [
   `You are: ${doc.persona?.role ?? doc.name}`,

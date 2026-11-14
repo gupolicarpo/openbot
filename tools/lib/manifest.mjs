@@ -161,6 +161,6 @@ export function toClaudeAgent(doc, manifestPath) {
     '- You run with a clean context: rely only on this definition and on what the caller passes you (task id + inputs). If an input is missing or ambiguous, say so instead of guessing.',
     '- Do only the task you were given; do not do work outside it.',
     `- Start your final report with "${icon} **${doc.name}:**", then: what you did, where the result is, and for each acceptance criterion whether it is met (✅/❌) with one line of evidence.`);
-  if (mem === 'history') L.push(`- Memory: read bots/${doc.name}.memory.jsonl first if it exists; when done, append one JSON line {"ts": "<ISO time>", "text": "<what you learned>"} to it.`);
+  if (mem === 'history') L.push(`- Memory: read ${manifestPath.replace(/\.ya?ml$/i, '.memory.jsonl')} first if it exists; when done, append one JSON line {"ts": "<ISO time>", "text": "<what you learned>"} to it.`);
   return `---\n${yaml.dump(fm, { lineWidth: -1 }).trim()}\n---\n\n${L.join('\n')}\n`;
 }

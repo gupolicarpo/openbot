@@ -57,7 +57,7 @@ Reject and report (field + reason); never guess:
 
 ## Run record (JSONL)
 
-One line per run in `bots/<name>.runs.jsonl`:
+One line per run in `<name>.runs.jsonl`, next to the manifest:
 
 ```json
 {"bot":"<name>","task":"<task.id>","status":"completed|failed","result":"<output path>","startedAt":"<ISO>","finishedAt":"<ISO>"}
@@ -66,7 +66,7 @@ One line per run in `bots/<name>.runs.jsonl`:
 ## Memory
 
 `execution.memory`: `none` (default) | `session` (in-memory chat) | `history`
-(persisted in `bots/<name>.memory.jsonl` via `memory-openbot.mjs`).
+(persisted in `<name>.memory.jsonl` next to the manifest, via `memory-openbot.mjs`).
 
 ## Capabilities (presets)
 
@@ -91,7 +91,7 @@ aggregates the summaries. See SKILL.md (compose mode).
 Use the reference validator before running:
 
 ```bash
-node tools/validate-openbot.mjs bots/<name>.yaml
+node tools/validate-openbot.mjs ~/.openbot/bots/<name>.yaml
 ```
 
 Exit 0 = valid; exit 1 = invalid (field + reason).

@@ -21,14 +21,14 @@ personality, instructions, tools and tasks.
 | Serve the API | `node tools/serve-openbot.mjs [port] [bots-dir]` |
 
 ## Layout
-- `bots/*.yaml` — manifests; `bots/*.runs.jsonl` — run history.
+- `bots/*.yaml` — example manifests; your own bots live in `~/.openbot/bots/` (never in the repo); `*.runs.jsonl` next to each manifest — run history.
 - `sample/` — example inputs and outputs.
 - `tools/` — `validate-openbot.mjs`, `list-openbot.mjs`, `schedule-openbot.mjs`, `serve-openbot.mjs`.
 - `.agents/skills/openbot/` — the skill (run/chat/list/author-edit).
 - `docs/` — schema, adapter spec, architecture, backlog.
 
 ## Extend
-- **New bot:** create `bots/<name>.yaml` (schema in `docs/openbot-schema-v1.md`).
+- **New bot:** ask Claude to create one (it writes `~/.openbot/bots/<name>.yaml`) (schema in `docs/openbot-schema-v1.md`).
 - **New harness:** implement the interface in `docs/openbot-adapter-spec-v1.md`.
 - **Next items:** see `docs/openbot-backlog.md`.
 
