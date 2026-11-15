@@ -65,17 +65,31 @@ integrations, credentials, network or actions with side effects.
    | `opus` | $4 / $20 | hard reasoning, long agentic work, or a costly mistake (security, money, irreversible actions) |
    | `fable` | $8 / $40 | only if the user asks for it, or `opus` at `high` already failed the test |
 
-   | Effort | Pick it when |
-   |---|---|
-   | `low` | short, direct answers; chat; high-volume tasks (`scheduled`, `api`) |
-   | `medium` | the default: a few steps, some checking |
-   | `high` | correctness matters more than speed (review, analysis, code) |
-   | `xhigh` / `max` | only after a lower level failed the test |
+   Pick the starting effort with four questions, asked in this order. Stop at
+   the first one you answer with yes.
 
-   Push the choice down when the bot runs often (`scheduled`, `api`, a busy
-   chat), and up when an error is expensive. Lower effort on a cheaper model
-   comes first; a bigger model is the last lever. Give one line of reasons
-   (e.g. "haiku + low: short summary of one file, runs daily").
+   1. Is this quick work, or a conversation where a person steers each turn
+      (chat, a short summary, a rewrite, sorting or tagging, a rough first
+      draft)? → `low`
+   2. Would an error that slips through unnoticed be expensive: lost money, a
+      problem with a customer, or someone deciding on wrong information
+      (checking figures, reviewing a contract or code, fact-checking, analysis
+      with no fixed path)? → `high`
+   3. Is the job long and difficult, does it matter a lot, and will it run
+      with nobody available to answer questions? Only when all three hold →
+      `xhigh`. Use `max` only when the user asks for the deepest possible
+      work and says it is critical.
+   4. None of the above → `medium`.
+
+   Length alone does not raise the level: work that follows fixed rules stays
+   at `low` or `medium` however long it is. A bot that runs often
+   (`scheduled`, `api`, a busy chat) leans one level down. This gives the
+   starting level only: raise it later only when the test fails at that level
+   (Phase 3), effort first and model last. Give one line of reasons (e.g.
+   "haiku + low: short summary of one file, runs daily").
+
+   The ordered four-question check is an idea from Ben AI's Effort Optimizer
+   (benai.co); the wording and the rules around it here are OpenBot's own.
 5. **Test case** — one `test` per task/chat task: real sample inputs (an
    existing file, or a small one you will create under `sample/`) or, for a
    chat task, a sample `message`; plus what a good answer must show (`expect`).
