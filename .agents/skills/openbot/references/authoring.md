@@ -58,6 +58,13 @@ integrations, credentials, network or actions with side effects.
    set both explicitly (no `inherit`), so the bot's cost does not depend on
    whoever calls it.
 
+   The rule is the same on every host; only the list of models changes. A
+   host that offers its own models (for example OpenOath, where the user
+   configures any provider) gives you that list with its prices: apply the
+   rule to that list, write the model as the host shows it (for example
+   `provider/model`), and ignore the table below. The table below is for
+   hosts that run Claude models, such as Claude Code.
+
    | Model | API price in/out per 1M tokens (Nov 2026) | Pick it when |
    |---|---|---|
    | `haiku` | $0.10 / $0.50 | well-defined text work: summarize, extract, classify, format, simple FAQ chat |
